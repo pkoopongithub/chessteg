@@ -465,7 +465,7 @@ begin
         ELSE
         BEGIN
         //writeln(' Grosse Rochade Weiss');
-        IF ((Spielerzug.vonpos=E1)AND(Spielerzug.nachpos=C1)) THEN
+        IF (grosserochademoeglich(figurenliste,cweiss))AND((Spielerzug.vonpos=E1)AND(Spielerzug.nachpos=C1)) THEN
         BEGIN
         grosserochade(figurenliste,cweiss);
         SpielerHatGezogen := true;
@@ -496,7 +496,7 @@ begin
         ELSE
         BEGIN
         //writeln(' Grosse Rochade Weiss');
-        IF ((Spielerzug.vonpos=E8)AND(Spielerzug.nachpos=C8)) THEN
+        IF (grosserochademoeglich(figurenliste,cschwarz))AND((Spielerzug.vonpos=E8)AND(Spielerzug.nachpos=C8)) THEN
         BEGIN
         grosserochade(figurenliste,cschwarz);
         SpielerHatGezogen := true;
@@ -526,7 +526,7 @@ begin
        SpielerHatGezogen :=false;
        IF weissAmZug THEN farbe := cweiss ELSE farbe := cschwarz;
      (* Rochade Weiss *)
-       IF weissAmZug THEN
+       IF NOT(weissAmZug) THEN
         BEGIN
         IF (kleinerochademoeglich(figurenliste,cweiss) OR grosserochademoeglich(figurenliste,cweiss)) AND(NOT rochiertweiss)
          THEN

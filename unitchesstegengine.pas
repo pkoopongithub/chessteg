@@ -2404,16 +2404,93 @@ END;
  FUNCTION schach(farbe:SHORTINT):BOOLEAN;
  VAR aktuell:Tfigurenliste;
  BEGIN
+  (* Schach Koenig *)
+  schach:=false;
   aktuell:=figurenliste;
   WHILE (aktuell<>NIL)
   DO
   BEGIN
    IF ((aktuell^.art=ck)AND(aktuell^.farbe=farbe))
     THEN
-    IF(attakiert(aktuell^.pos,aktuell)) THEN schach:=true ELSE schach:=false;
+    IF(attakiert(aktuell^.pos,aktuell)) THEN schach:=true;
    aktuell:=aktuell^.nach;
-  END
+  END;
  END;
+  FUNCTION damegef(farbe:SHORTINT):BOOLEAN;
+ VAR aktuell:Tfigurenliste;
+ BEGIN
+  (* Schach Koenig *)
+  aktuell:=figurenliste;
+  damegef:=false;
+  WHILE (aktuell<>NIL)
+  DO
+  BEGIN
+   IF ((aktuell^.art=cd)AND(aktuell^.farbe=farbe))
+    THEN
+    IF(attakiert(aktuell^.pos,aktuell)) THEN damegef:=true;
+   aktuell:=aktuell^.nach;
+  END;
+ END;
+   FUNCTION turmgef(farbe:SHORTINT):BOOLEAN;
+ VAR aktuell:Tfigurenliste;
+ BEGIN
+  (* Schach Koenig *)
+  aktuell:=figurenliste;
+  turmgef:=false;
+  WHILE (aktuell<>NIL)
+  DO
+  BEGIN
+   IF ((aktuell^.art=ct)AND(aktuell^.farbe=farbe))
+    THEN
+    IF(attakiert(aktuell^.pos,aktuell)) THEN turmgef:=true;
+   aktuell:=aktuell^.nach;
+  END;
+ END;
+   FUNCTION springergef(farbe:SHORTINT):BOOLEAN;
+  VAR aktuell:Tfigurenliste;
+  BEGIN
+   (* Schach Koenig *)
+   aktuell:=figurenliste;
+   springergef:=false;
+   WHILE (aktuell<>NIL)
+   DO
+   BEGIN
+    IF ((aktuell^.art=cs)AND(aktuell^.farbe=farbe))
+     THEN
+     IF(attakiert(aktuell^.pos,aktuell)) THEN springergef:=true;
+    aktuell:=aktuell^.nach;
+   END;
+  END;
+   FUNCTION laeufergef(farbe:SHORTINT):BOOLEAN;
+  VAR aktuell:Tfigurenliste;
+  BEGIN
+   (* Schach Koenig *)
+   aktuell:=figurenliste;
+   laeufergef:=false;
+   WHILE (aktuell<>NIL)
+   DO
+   BEGIN
+    IF ((aktuell^.art=cl)AND(aktuell^.farbe=farbe))
+     THEN
+     IF(attakiert(aktuell^.pos,aktuell)) THEN laeufergef:=true;
+    aktuell:=aktuell^.nach;
+   END;
+  END;
+   FUNCTION bauergef(farbe:SHORTINT):BOOLEAN;
+  VAR aktuell:Tfigurenliste;
+  BEGIN
+   (* Schach Koenig *)
+   aktuell:=figurenliste;
+   bauergef:=false;
+   WHILE (aktuell<>NIL)
+   DO
+   BEGIN
+    IF ((aktuell^.art=cb)AND(aktuell^.farbe=farbe))
+     THEN
+     IF(attakiert(aktuell^.pos,aktuell)) THEN bauergef:=true;
+    aktuell:=aktuell^.nach;
+   END;
+  END;
 
  FUNCTION alphabeta (farbe, alpha, beta, tiefe, maxTiefe: INTEGER;linie:STRING;letzterzug:Tziehe): INTEGER;
  VAR ruhigeStellung:BOOLEAN;
@@ -2469,7 +2546,7 @@ END;
 
         brettZugSetzen (brett,zug);
 
-        IF  (schach(farbe))
+        IF  (schach(farbe))OR(damegef(farbe))
         THEN
         BEGIN
          brettZugZuruecknehmen (brett,zug);
