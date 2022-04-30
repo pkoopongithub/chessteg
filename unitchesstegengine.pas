@@ -38,7 +38,7 @@ CONST cweiss       =      1;
       ck           =     99;
       dumy         =    100;
       leer         =      0;
-      ctiefe       =      5;
+      ctiefe       =      9;
       c1000        =   1000;
 
       A1=21;
@@ -169,6 +169,7 @@ FUNCTION generiereTurmzuege(VAR aktuellefigur:Tfigurenliste):Tzugliste;
 FUNCTION generiereLaeuferzuege(VAR aktuellefigur:Tfigurenliste):Tzugliste;
 FUNCTION generiereDamezuege(VAR aktuellefigur:Tfigurenliste):Tzugliste;
 FUNCTION attakiert(feld:SHORTINT; VAR aktuellefigur:Tfigurenliste):BOOLEAN;
+FUNCTION figurgef(feld:SHORTINT; VAR aktuellefigur:Tfigurenliste):BOOLEAN;
 FUNCTION generiereKoenigszuege(VAR aktuellefigur:Tfigurenliste):Tzugliste;
 FUNCTION generiereSpringerzuege(VAR aktuellefigur:Tfigurenliste):Tzugliste;
 FUNCTION generiereBauernzuege(farbe:SHORTINT;VAR aktuellefigur:Tfigurenliste;letzterzug:Tziehe):Tzugliste;
@@ -972,6 +973,450 @@ FUNCTION generiereDamezuege(VAR aktuellefigur:Tfigurenliste):Tzugliste;
      generiereDamezuege:= wurzel;
  END;
 
+FUNCTION figurgef(feld:SHORTINT; VAR aktuellefigur:Tfigurenliste):BOOLEAN;
+CONST
+      auf   = 10;
+      ab    =-10;
+      links = -1;
+      rechts= +1;
+VAR attacke,attackeverteidigt:BOOLEAN;
+    figurbedroht,figurverteidigt:INTEGER;
+
+
+FUNCTION vonTurmBedroht(feld,richtung:SHORTINT):BOOLEAN;
+VAR attacke,suchende:BOOLEAN;
+    testfeld:SHORTINT;
+
+ BEGIN
+  attacke:= false;suchende:=false;
+  testfeld:=feld+richtung;
+  WHILE ((brett(.testfeld.)<>dumy)AND(NOT(suchende)))
+  DO
+  BEGIN
+   IF (brett(.testfeld.)<>(aktuellefigur^.farbe*aktuellefigur^.art))
+   THEN
+   IF (
+       (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=ct)
+       OR
+       (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=-ct)
+      )
+      THEN BEGIN attacke:=true;suchende:=true;END;
+      IF (brett(.testfeld.)<>leer) THEN suchende:=true;
+   testfeld:=testfeld+richtung;
+  END;
+  vonTurmBedroht:=attacke;
+ END;
+
+
+FUNCTION vonLaeuferBedroht(feld,richtung:SHORTINT):BOOLEAN;
+VAR attacke,suchende:BOOLEAN;
+    testfeld:SHORTINT;
+
+ BEGIN
+  attacke:= false;suchende:=false;
+  Testfeld:=feld+richtung;
+  WHILE ((brett(.testfeld.)<>dumy)AND(NOT(suchende)))
+  DO
+  BEGIN
+   IF (brett(.testfeld.)<>(aktuellefigur^.farbe*aktuellefigur^.art))
+   THEN
+   IF (
+       (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=cl)
+       OR
+       (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=-cl)
+      )
+      THEN BEGIN attacke:=true;suchende:=true;END;
+      IF (brett(.testfeld.)<>leer)THEN suchende:=true;
+   testfeld:=testfeld+richtung;
+  END;
+  vonLaeuferBedroht:=attacke;
+ END;
+
+FUNCTION vonDameBedroht(feld,richtung:SHORTINT):BOOLEAN;
+VAR attacke,suchende:BOOLEAN;
+    testfeld:SHORTINT;
+
+ BEGIN
+  attacke:= false;suchende:=false;
+  Testfeld:=feld+richtung;
+  WHILE ((brett(.testfeld.)<>dumy)AND(NOT(suchende)))
+  DO
+  BEGIN
+   IF (brett(.testfeld.)<>(aktuellefigur^.farbe*aktuellefigur^.art))
+   THEN
+   IF (
+       (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=cd)
+       OR
+       (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=-cd)
+      )
+      THEN BEGIN attacke:=true;suchende:=true;END;
+      IF (brett(.testfeld.)<>leer)THEN suchende:=true;
+   testfeld:=testfeld+richtung;
+  END;
+  vonDameBedroht:=attacke;
+ END;
+
+
+FUNCTION vonKoenigBedroht(feld,richtung:SHORTINT):BOOLEAN;
+VAR attacke:BOOLEAN;
+    testfeld:SHORTINT;
+
+BEGIN
+ attacke:=false;
+ testfeld:=feld+richtung;
+ if (
+     (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=ck)
+     OR
+     (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=-ck)
+    )
+    THEN BEGIN attacke:=true;END;
+ vonKoenigBedroht:=attacke;
+
+END;
+
+FUNCTION vonBauerBedroht(feld,richtung:SHORTINT):BOOLEAN;
+VAR attacke:BOOLEAN;
+    testfeld:SHORTINT;
+
+BEGIN
+ attacke:=false;
+ testfeld:=feld+richtung;
+ if (
+     (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=cb)
+     OR
+     (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=-cb)
+    )
+    THEN BEGIN attacke:=true;END;
+ vonBauerBedroht:=attacke;
+
+END;
+
+FUNCTION vonSpringerBedroht(feld,richtung:SHORTINT):BOOLEAN;
+VAR attacke:BOOLEAN;
+    testfeld:SHORTINT;
+
+BEGIN
+ attacke:=false;
+ testfeld:=feld+richtung;
+ if (
+     (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=cs)
+     OR
+     (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=-cs)
+    )
+    THEN BEGIN attacke:=true;END;
+ vonSpringerBedroht:=attacke;
+
+END;
+
+(* SCHUTZFunktionen BEGIN *)
+
+
+FUNCTION vonTurmGeschuetzt(feld,richtung:SHORTINT):BOOLEAN;
+VAR attackeAbgewehrt,suchende:BOOLEAN;
+    testfeld:SHORTINT;
+
+ BEGIN
+  attackeAbgewehrt:= false;suchende:=false;
+  testfeld:=feld+richtung;
+  WHILE ((brett(.testfeld.)<>dumy)AND(NOT(suchende)))
+  DO
+  BEGIN
+   IF (brett(.testfeld.)<>(aktuellefigur^.farbe*aktuellefigur^.art))
+   THEN
+   IF (
+       (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=-ct)
+       OR
+       (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=ct)
+      )
+      THEN BEGIN attackeAbgewehrt:=true;suchende:=true;END;
+      IF (brett(.testfeld.)<>leer) THEN suchende:=true;
+   testfeld:=testfeld+richtung;
+  END;
+  vonTurmGeschuetzt:=attackeAbgewehrt;
+ END;
+
+
+FUNCTION vonLaeuferGeschuetzt(feld,richtung:SHORTINT):BOOLEAN;
+VAR attackeAbgewehrt,suchende:BOOLEAN;
+    testfeld:SHORTINT;
+
+ BEGIN
+  attackeAbgewehrt:= false;suchende:=false;
+  Testfeld:=feld+richtung;
+  WHILE ((brett(.testfeld.)<>dumy)AND(NOT(suchende)))
+  DO
+  BEGIN
+   IF (brett(.testfeld.)<>(aktuellefigur^.farbe*aktuellefigur^.art))
+   THEN
+   IF (
+       (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=-cl)
+       OR
+       (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=cl)
+      )
+      THEN BEGIN attackeAbgewehrt:=true;suchende:=true;END;
+      IF (brett(.testfeld.)<>leer)THEN suchende:=true;
+   testfeld:=testfeld+richtung;
+  END;
+  vonLaeuferGeschuetzt:=attackeAbgewehrt;
+ END;
+
+FUNCTION vonDameGeschuetzt(feld,richtung:SHORTINT):BOOLEAN;
+VAR attackeAbgewehrt,suchende:BOOLEAN;
+    testfeld:SHORTINT;
+
+ BEGIN
+  attackeAbgewehrt:= false;suchende:=false;
+  Testfeld:=feld+richtung;
+  WHILE ((brett(.testfeld.)<>dumy)AND(NOT(suchende)))
+  DO
+  BEGIN
+   IF (brett(.testfeld.)<>(aktuellefigur^.farbe*aktuellefigur^.art))
+   THEN
+   IF (
+       (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=-cd)
+       OR
+       (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=cd)
+      )
+      THEN BEGIN attackeAbgewehrt:=true;suchende:=true;END;
+      IF (brett(.testfeld.)<>leer)THEN suchende:=true;
+   testfeld:=testfeld+richtung;
+  END;
+  vonDameGeschuetzt:=attackeAbgewehrt;
+ END;
+
+
+FUNCTION vonKoenigGeschuetzt(feld,richtung:SHORTINT):BOOLEAN;
+VAR attackeAbgewehrt:BOOLEAN;
+    testfeld:SHORTINT;
+
+BEGIN
+ attackeAbgewehrt:=false;
+ testfeld:=feld+richtung;
+ if (
+     (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=-ck)
+     OR
+     (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=ck)
+    )
+    THEN BEGIN attackeAbgewehrt:=true;END;
+ vonKoenigGeschuetzt:=attackeAbgewehrt;
+
+END;
+
+FUNCTION vonBauerGeschuetzt(feld,richtung:SHORTINT):BOOLEAN;
+VAR attackeAbgewehrt:BOOLEAN;
+    testfeld:SHORTINT;
+
+BEGIN
+ attackeAbgewehrt:=false;
+ testfeld:=feld+richtung;
+ if (
+     (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=-cb)
+     OR
+     (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=cb)
+    )
+    THEN BEGIN attackeAbgewehrt:=true;END;
+ vonBauerGeschuetzt:=attackeAbgewehrt;
+
+END;
+
+FUNCTION vonSpringerGeschuetzt(feld,richtung:SHORTINT):BOOLEAN;
+VAR attackeAbgewehrt:BOOLEAN;
+    testfeld:SHORTINT;
+
+BEGIN
+ attackeAbgewehrt:=false;
+ testfeld:=feld+richtung;
+ if (
+     (aktuellefigur^.farbe<c0)AND(brett(.testfeld.)=-cs)
+     OR
+     (aktuellefigur^.farbe>c0)AND(brett(.testfeld.)=cs)
+    )
+    THEN BEGIN attackeAbgewehrt:=true;END;
+ vonSpringerGeschuetzt:=attackeAbgewehrt;
+
+END;
+
+
+(* Schutzfunktionen END *)
+
+BEGIN
+  figurbedroht:=c0;
+  figurverteidigt:=c0;
+
+  attacke:=false;
+  attacke:=vonTurmBedroht(feld,auf);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonTurmBedroht(feld,links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonTurmBedroht(feld,rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonTurmBedroht(feld,ab);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+
+  attacke:=vonLaeuferBedroht(feld,auf+links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonLaeuferBedroht(feld,ab+links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonLaeuferBedroht(feld,auf+rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonLaeuferBedroht(feld,ab+rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+
+
+  attacke:=vonDameBedroht(feld,auf);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonDameBedroht(feld,links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonDameBedroht(feld,rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonDameBedroht(feld,ab);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+
+  attacke:=vonDameBedroht(feld,auf+links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonDameBedroht(feld,ab+links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonDameBedroht(feld,auf+rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonDameBedroht(feld,ab+rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+
+
+
+
+  attacke:=vonKoenigBedroht(feld,auf+links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonKoenigBedroht(feld,auf+rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonKoenigBedroht(feld,ab+rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonKoenigBedroht(feld,ab+links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonKoenigBedroht(feld,auf);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonKoenigBedroht(feld,ab);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonKoenigBedroht(feld,rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonKoenigBedroht(feld,links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+
+
+  attacke:=vonSpringerBedroht(feld,auf+auf+links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonSpringerBedroht(feld,auf+auf+rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonSpringerBedroht(feld,ab+ab+rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonSpringerBedroht(feld,ab+ab+links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonSpringerBedroht(feld,links+links+auf);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonSpringerBedroht(feld,links+links+ab);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonSpringerBedroht(feld,rechts+rechts+auf);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonSpringerBedroht(feld,rechts+rechts+ab);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+
+
+
+  attacke:=vonBauerBedroht(feld,auf*aktuellefigur^.farbe+links);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+  attacke:=vonBauerBedroht(feld,auf*aktuellefigur^.farbe+rechts);
+  IF attacke THEN figurbedroht := figurbedroht+c1;
+
+  (* Figur verteidigt BEGIN *)
+
+  attackeVerteidigt:=false;
+  attackeVerteidigt:=vonTurmBedroht(feld,auf);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonTurmBedroht(feld,links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonTurmBedroht(feld,rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonTurmBedroht(feld,ab);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+
+  attackeVerteidigt:=vonLaeuferBedroht(feld,auf+links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonLaeuferBedroht(feld,ab+links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonLaeuferBedroht(feld,auf+rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonLaeuferBedroht(feld,ab+rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+
+
+  attackeVerteidigt:=vonDameBedroht(feld,auf);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonDameBedroht(feld,links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonDameBedroht(feld,rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonDameBedroht(feld,ab);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+
+  attackeVerteidigt:=vonDameBedroht(feld,auf+links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonDameBedroht(feld,ab+links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonDameBedroht(feld,auf+rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonDameBedroht(feld,ab+rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+
+
+
+
+  attackeVerteidigt:=vonKoenigBedroht(feld,auf+links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonKoenigBedroht(feld,auf+rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonKoenigBedroht(feld,ab+rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonKoenigBedroht(feld,ab+links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonKoenigBedroht(feld,auf);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonKoenigBedroht(feld,ab);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonKoenigBedroht(feld,rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonKoenigBedroht(feld,links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+
+
+  attackeVerteidigt:=vonSpringerBedroht(feld,auf+auf+links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonSpringerBedroht(feld,auf+auf+rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonSpringerBedroht(feld,ab+ab+rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonSpringerBedroht(feld,ab+ab+links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonSpringerBedroht(feld,links+links+auf);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonSpringerBedroht(feld,links+links+ab);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonSpringerBedroht(feld,rechts+rechts+auf);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonSpringerBedroht(feld,rechts+rechts+ab);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+
+
+
+  attackeVerteidigt:=vonBauerBedroht(feld,auf*aktuellefigur^.farbe+links);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+  attackeVerteidigt:=vonBauerBedroht(feld,auf*aktuellefigur^.farbe+rechts);
+  IF attackeVerteidigt THEN figurverteidigt := figurverteidigt+c1;
+
+  (* Figur Verteidigt END *)
+
+  IF figurbedroht<=figurverteidigt THEN figurgef:=false ELSE figurgef:=true;
+
+END;
+
 FUNCTION attakiert(feld:SHORTINT; VAR aktuellefigur:Tfigurenliste):BOOLEAN;
 CONST
       auf   = 10;
@@ -1745,7 +2190,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+auf;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1762,7 +2207,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+ab;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1779,7 +2224,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+links;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1796,7 +2241,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-          wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+          wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
           IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+rechts;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1818,7 +2263,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+auf+rechts;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1835,7 +2280,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+ab+rechts;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1852,7 +2297,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+auf+links;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1869,7 +2314,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+ab+links;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1891,7 +2336,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+auf+rechts;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1908,7 +2353,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+ab+rechts;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1925,7 +2370,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+auf+links;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1942,7 +2387,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+ab+links;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1958,7 +2403,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+auf;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1975,7 +2420,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+ab;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -1992,7 +2437,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+links;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -2009,7 +2454,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
               )
          DO
           BEGIN
-           wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+           wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
            IF(brett(.feld.)<>c0) THEN suchende:=true;
            feld:=feld+rechts;
            IF(brett(.feld.)=dumy) THEN suchende:=true;
@@ -2031,7 +2476,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                 OR
                 (brett(.feld+auf.)=leer)
           )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
        IF (
                  ((brett(.feld+auf+rechts.)<c0)AND(aktuell^.farbe>c0)AND(brett(.feld+auf+rechts.)<>dumy))
@@ -2040,7 +2485,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+auf+rechts.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
        IF (
                  ((brett(.feld+auf+links.)<c0)AND(aktuell^.farbe>c0)AND(brett(.feld+auf+links.)<>dumy))
@@ -2049,7 +2494,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+auf+links.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
        IF (
                  ((brett(.feld+links.)<c0)AND(aktuell^.farbe>c0)AND(brett(.feld+links.)<>dumy))
@@ -2058,7 +2503,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+links.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
        IF (
                  ((brett(.feld+rechts.)<c0)AND(aktuell^.farbe>c0)AND(brett(.feld+rechts.)<>dumy))
                  OR
@@ -2076,7 +2521,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+ab+links.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
 
        IF (
@@ -2086,7 +2531,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+ab+rechts.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
        IF (
                  ((brett(.feld+ab.)<c0)AND(aktuell^.farbe>c0)AND(brett(.feld+ab.)<>dumy))
@@ -2095,7 +2540,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+ab.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
        IF((attakiert(feld+auf       ,aktuell))OR(brett(.feld+auf.)=dumy       ))THEN wert:=wert-(1*aktuell^.farbe);
        IF((attakiert(feld+auf+rechts,aktuell))OR(brett(.feld+auf+rechts.)=dumy))THEN wert:=wert-(1*aktuell^.farbe);
@@ -2124,7 +2569,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+auf+auf+rechts.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe); //3 irrational 1 besser
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*) //3 irrational 1 besser
 
        IF (
                  ((brett(.feld+auf+auf+links.)<c0)AND(aktuell^.farbe>c0)AND(brett(.feld+auf+auf+links.)<>dumy))
@@ -2133,7 +2578,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+auf+auf+links.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
        IF (
                  ((brett(.feld+ab+ab+rechts.)<c0)AND(aktuell^.farbe>c0)AND(brett(.feld+ab+ab+rechts.)<>dumy))
@@ -2142,7 +2587,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+ab+ab+rechts.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
        IF (
                  ((brett(.feld+ab+ab+links.)<c0)AND(aktuell^.farbe>c0)AND(brett(.feld+ab+ab+links.)<>dumy))
                  OR
@@ -2150,7 +2595,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+ab+ab+links.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
        IF (
                  ((brett(.feld+links+links+auf.)<c0)AND(aktuell^.farbe>c0)AND(brett(.feld+links+links+auf.)<>dumy))
@@ -2159,7 +2604,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+links+links+auf.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
        IF (
                  ((brett(.feld+links+links+ab.)<c0)AND(aktuell^.farbe>c0)AND(brett(.feld+links+links+ab.)<>dumy))
@@ -2168,7 +2613,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+links+links+ab.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
 
        IF (
@@ -2178,7 +2623,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+rechts+rechts+auf.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
 
        IF (
@@ -2188,7 +2633,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  (brett(.feld+rechts+rechts+ab.)=leer)
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
 
 
@@ -2218,14 +2663,14 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
                  OR
                  ((brett(.feld+auf*aktuell^.farbe+rechts.)>c0)AND(aktuell^.farbe<c0))
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
        IF (
                  ((brett(.feld+auf*aktuell^.farbe+links.)<c0)AND(aktuell^.farbe>c0)AND(brett(.feld+auf*aktuell^.farbe+links.)<>dumy))
                  OR
                  ((brett(.feld+auf*aktuell^.farbe+links.)>c0)AND(aktuell^.farbe<c0))
            )
-                THEN wert:=wert+(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);
+                THEN wert:=wert+ c1*(aktuell^.farbe);(*(1*aktuell^.farbe)+ABS(brett(.feld.))*1*(aktuell^.farbe);*)
 
        IF (brett(.feld+(10*aktuell^.farbe).)=dumy)THEN wert:=wert+((cd+cs+cl)*aktuell^.farbe);
        IF (aktuell^.farbe = cweiss)
@@ -2419,7 +2864,6 @@ END;
   FUNCTION damegef(farbe:SHORTINT):BOOLEAN;
  VAR aktuell:Tfigurenliste;
  BEGIN
-  (* Schach Koenig *)
   aktuell:=figurenliste;
   damegef:=false;
   WHILE (aktuell<>NIL)
@@ -2427,14 +2871,13 @@ END;
   BEGIN
    IF ((aktuell^.art=cd)AND(aktuell^.farbe=farbe))
     THEN
-    IF(attakiert(aktuell^.pos,aktuell)) THEN damegef:=true;
+    IF(attakiert(aktuell^.pos,aktuell)) THEN BEGIN damegef:=true; exit; END;
    aktuell:=aktuell^.nach;
   END;
  END;
    FUNCTION turmgef(farbe:SHORTINT):BOOLEAN;
  VAR aktuell:Tfigurenliste;
  BEGIN
-  (* Schach Koenig *)
   aktuell:=figurenliste;
   turmgef:=false;
   WHILE (aktuell<>NIL)
@@ -2442,14 +2885,13 @@ END;
   BEGIN
    IF ((aktuell^.art=ct)AND(aktuell^.farbe=farbe))
     THEN
-    IF(attakiert(aktuell^.pos,aktuell)) THEN turmgef:=true;
+    IF(attakiert(aktuell^.pos,aktuell)) THEN BEGIN turmgef:=true; exit; END;
    aktuell:=aktuell^.nach;
   END;
  END;
    FUNCTION springergef(farbe:SHORTINT):BOOLEAN;
   VAR aktuell:Tfigurenliste;
   BEGIN
-   (* Schach Koenig *)
    aktuell:=figurenliste;
    springergef:=false;
    WHILE (aktuell<>NIL)
@@ -2457,14 +2899,13 @@ END;
    BEGIN
     IF ((aktuell^.art=cs)AND(aktuell^.farbe=farbe))
      THEN
-     IF(attakiert(aktuell^.pos,aktuell)) THEN springergef:=true;
+     IF(figurgef(aktuell^.pos,aktuell)) THEN BEGIN springergef:=true; exit; END;
     aktuell:=aktuell^.nach;
    END;
   END;
    FUNCTION laeufergef(farbe:SHORTINT):BOOLEAN;
   VAR aktuell:Tfigurenliste;
   BEGIN
-   (* Schach Koenig *)
    aktuell:=figurenliste;
    laeufergef:=false;
    WHILE (aktuell<>NIL)
@@ -2472,14 +2913,13 @@ END;
    BEGIN
     IF ((aktuell^.art=cl)AND(aktuell^.farbe=farbe))
      THEN
-     IF(attakiert(aktuell^.pos,aktuell)) THEN laeufergef:=true;
+     IF(figurgef(aktuell^.pos,aktuell)) THEN BEGIN laeufergef:=true; exit; END;
     aktuell:=aktuell^.nach;
    END;
   END;
    FUNCTION bauergef(farbe:SHORTINT):BOOLEAN;
   VAR aktuell:Tfigurenliste;
   BEGIN
-   (* Schach Koenig *)
    aktuell:=figurenliste;
    bauergef:=false;
    WHILE (aktuell<>NIL)
@@ -2487,7 +2927,7 @@ END;
    BEGIN
     IF ((aktuell^.art=cb)AND(aktuell^.farbe=farbe))
      THEN
-     IF(attakiert(aktuell^.pos,aktuell)) THEN bauergef:=true;
+     IF(figurgef(aktuell^.pos,aktuell)) THEN BEGIN bauergef:=true; exit; END;
     aktuell:=aktuell^.nach;
    END;
   END;
@@ -2546,7 +2986,7 @@ END;
 
         brettZugSetzen (brett,zug);
 
-        IF  (schach(farbe))OR(damegef(farbe))
+        IF  (schach(farbe)OR damegef(farbe)OR turmgef(farbe)OR springergef(farbe) OR laeufergef(farbe) OR bauergef(farbe))
         THEN
         BEGIN
          brettZugZuruecknehmen (brett,zug);
@@ -2723,7 +3163,7 @@ END;
 
          brettZugSetzen (brett,zug);
 
-         IF  schach(farbe)
+         IF  (schach(farbe)OR damegef(farbe)OR turmgef(farbe)OR springergef(farbe)  OR laeufergef(farbe) OR bauergef(farbe))
          THEN
          BEGIN
           brettZugZuruecknehmen (brett,zug); schachzaehler:=schachzaehler+c1;
