@@ -14,4 +14,5 @@ The version for Windows (Object Pascal Lazarus) can access the files.
 The version for MacOS (Object Pascal Lazarus) does not:
 I am grateful for help
 
+![screenshot](./profilans.png)
 
