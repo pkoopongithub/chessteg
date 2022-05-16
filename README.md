@@ -16,4 +16,7 @@ The version for MacOS (Object Pascal Lazarus) does not:
 I am grateful for help
 
 ![screenshot](./chesstecMacWindows.png)
+![screenshot](./chesstecProperties.png)
+
+
 
