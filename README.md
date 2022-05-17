@@ -17,6 +17,7 @@ I am grateful for help
 
 ![screenshot](./chesstecMacWindows.png)
 ![screenshot](./chesstecProperties.png)
+![screenshot](./zugriff.png)
 
 
 
