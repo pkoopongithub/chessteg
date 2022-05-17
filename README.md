@@ -3,4 +3,4 @@ chess Lazarus Object Pascal
 
 
 
-![screenshot](./chesstec.png)
+![screenshot](./chesstec.JPG)
