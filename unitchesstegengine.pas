@@ -38,7 +38,7 @@ CONST cweiss       =      1;
       ck           =     99;
       dumy         =    100;
       leer         =      0;
-      ctiefe       =      9;
+      ctiefe       =     12;
       c1000        =   1000;
 
       A1=21;
@@ -176,7 +176,7 @@ FUNCTION generiereBauernzuege(farbe:SHORTINT;VAR aktuellefigur:Tfigurenliste;let
 FUNCTION zuggenerator (farbe:INTEGER;letzterzug:Tziehe):Tzugliste;
 PROCEDURE zugAbbau(linie:STRING;farbe:SHORTINT; VAR zugliste:Tzugliste);
 PROCEDURE figuren(figurenliste:Tfigurenliste);
-FUNCTION bewerteZug ():INTEGER;
+FUNCTION bewerteZug (farbe:SHORTINT):INTEGER;
 PROCEDURE ComputerZugSetzen(VAR brett:Tbrett; VAR ziehe:Tziehe);
 PROCEDURE brettZugSetzen (VAR brett:Tbrett;VAR ziehe:Tziehe);
 PROCEDURE brettZugZuruecknehmen (VAR brett:Tbrett; VAR ziehe:Tziehe);
@@ -2607,7 +2607,7 @@ BEGIN
    END
 END;
 
-FUNCTION bewerteZug ():INTEGER;
+FUNCTION bewerteZug (farbe:SHORTINT):INTEGER;
 Var wert:INTEGER;
     feld:BYTE;
     aktuell:Tfigurenliste;
@@ -2617,6 +2617,7 @@ CONST auf   = 10;
       ab    =-10;
       links = -1;
       rechts= +1;
+      c1    = +1;
 
 FUNCTION zaehleFigurenliste(figurenliste:Tfigurenliste):INTEGER;
 VAR aktuell:Tfigurenliste;zaehler:INTEGER;
@@ -2638,7 +2639,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
  WHILE (aktuell<>nil)
   DO
    BEGIN
-    IF (NOT(aktuell^.geschlagen)AND(aktuell^.art=ct))
+    IF (NOT(aktuell^.geschlagen)AND(aktuell^.art=ct)AND(aktuell^.farbe=farbe))
      THEN
          BEGIN
          wert:= wert+(aktuell^.art*aktuell^.farbe);
@@ -2711,7 +2712,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
           END;
          END;(*if not geschlagen und turm*)
 
-    IF (NOT(aktuell^.geschlagen)AND(aktuell^.art=cl))
+    IF (NOT(aktuell^.geschlagen)AND(aktuell^.art=cl)AND(aktuell^.farbe=farbe))
      THEN
          BEGIN
          wert:= wert+(aktuell^.art*aktuell^.farbe);
@@ -2784,7 +2785,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
           END;
          END;(*if not geschlagen und laeufer*)
 
-    IF (NOT(aktuell^.geschlagen)AND(aktuell^.art=cd))
+    IF (NOT(aktuell^.geschlagen)AND(aktuell^.art=cd)AND(aktuell^.farbe=farbe))
      THEN
          BEGIN
          wert:= wert+(aktuell^.art*aktuell^.farbe);
@@ -2926,7 +2927,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
          END;(*if not geschlagen und dame*)
 
 
-    IF ((NOT(aktuell^.geschlagen))AND(aktuell^.art=ck))
+    IF ((NOT(aktuell^.geschlagen))AND(aktuell^.art=ck)AND(aktuell^.farbe=farbe))
      THEN
       BEGIN (*KOENIGSBEWERTUNG*)
        wert:= wert+(aktuell^.art*aktuell^.farbe);
@@ -3017,7 +3018,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
 
       END;(*Koenigsbewertung*)
 
-     IF ((NOT(aktuell^.geschlagen))AND(aktuell^.art=cs))
+     IF ((NOT(aktuell^.geschlagen))AND(aktuell^.art=cs)AND(aktuell^.farbe=farbe))
      THEN
       BEGIN (*SPRINGERBEWERTUNG*)
        wert:= wert+(aktuell^.art*aktuell^.farbe);
@@ -3107,7 +3108,7 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
 
 
 
-   IF ((NOT(aktuell^.geschlagen))AND(aktuell^.art=cb))
+   IF ((NOT(aktuell^.geschlagen))AND(aktuell^.art=cb)AND(aktuell^.farbe=farbe))
      THEN
       BEGIN (*BauernBEWERTUNG*)
        wert:= wert+(aktuell^.art*aktuell^.farbe);
@@ -3431,7 +3432,7 @@ END;
 
 
     IF (tiefe = maxTiefe)  AND   ruhigeStellung
-     THEN BEGIN zugAbbau(linie,farbe,zugliste); zugliste:= NIL;alphabeta:= bewerteZug(); aktuell:=nil; END
+     THEN BEGIN zugAbbau(linie,farbe,zugliste); zugliste:= NIL;alphabeta:= bewerteZug(farbe); aktuell:=nil; END
     ELSE
     BEGIN
        (* Aufbau Zugliste nach oben verlegt *)
@@ -3459,9 +3460,9 @@ END;
 
         (* ANFANG nicht schach *)
         IF (tiefe < maxTiefe) THEN tiefe:=tiefe + 1;
-        (* IF ((aktuell^.geschlagen<>NIL)AND(figurangr(aktuell^.nachpos,aktuell^.geschlagen)))
+        (**) IF ((aktuell^.geschlagen<>NIL)AND(figurangr(aktuell^.nachpos,aktuell^.geschlagen)))
                THEN bewertung := (cmaxinteger-tiefe-ck+aktuell^.geschlagen^.art)*farbe
-               ELSE *) bewertung := AlphaBeta (-farbe,beta,alpha,tiefe,maxTiefe,linie+'-',letzterzug);
+               ELSE (**) bewertung := AlphaBeta (-farbe,beta,alpha,tiefe,maxTiefe,linie+'-',letzterzug);
 
         IF ((farbe=cweiss)  AND(bewertung>alpha)) THEN alpha:=bewertung;
         IF ((farbe=cschwarz)AND(bewertung<alpha)) THEN alpha:=bewertung;
