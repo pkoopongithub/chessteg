@@ -1866,7 +1866,7 @@ BEGIN  (*showmessage(' -> H1='+inttostr(brett(.H1.)));*)
   (* Figur Verteidigt END *)
 
 
-    IF figurbedroht < figurverteidigt THEN figurangr:=False
+    IF figurbedroht < figurverteidigt THEN figurangr:=false ELSE  figurangr:=true
   (*IF (figurbedroht > c0) (*AND (figurverteidigt = c0)*) THEN BEGIN showmessage('>0');figurangr:=true END ELSE showmessage('<0');*)
   (*figurangr:=true;*)
   (*
@@ -2620,6 +2620,7 @@ CONST auf   = 10;
       c1    = +1;
 
 FUNCTION zaehleFigurenliste(figurenliste:Tfigurenliste):INTEGER;
+const c1 = +1;
 VAR aktuell:Tfigurenliste;zaehler:INTEGER;
 BEGIN
  aktuell:=figurenliste;zaehler:=c0;
@@ -3145,14 +3146,14 @@ BEGIN (* BEWERTUNG ZUG mit bewerteZUG() *)
       END;(*Bauernbewertung*)
 
      (* Zentrumsbewertung für alle Figuren zusätzlich zu Beginn des Spiels *)
-      IF zaehleFigurenliste(figurenliste) >15 THEN
+      (*IF zaehleFigurenliste(figurenliste) >15 THEN
       wert:=wert +(
                    (
                    (5-ABS(5-(aktuell^.pos MOD 10)))
                    +
                    (5-ABS(5-(aktuell^.pos DIV 10)))
                    )*aktuell^.farbe
-                  );
+                  ); *)
 
     aktuell:=aktuell^.nach;
    END;(*WHILE not nil*)
@@ -3298,6 +3299,7 @@ END;
  END;(*matt*)
 
  FUNCTION zaehleZugliste(zugliste:Tzugliste):INTEGER;
+ CONST c1 = +1;
  VAR aktuell:Tzugliste;zaehler:INTEGER;
  BEGIN
   aktuell:=zugliste;zaehler:=c0;
@@ -3450,7 +3452,7 @@ END;
 
         brettZugSetzen (brett,zug);
 
-        IF  (schach(farbe)OR damegef(farbe)OR turmgef(farbe)OR springergef(farbe) OR laeufergef(farbe) OR bauergef(farbe))
+        IF  (schach(farbe)(*OR damegef(farbe)OR turmgef(farbe)OR springergef(farbe) OR laeufergef(farbe) OR bauergef(farbe)*))
         THEN
         BEGIN
          brettZugZuruecknehmen (brett,zug);
@@ -3460,8 +3462,8 @@ END;
 
         (* ANFANG nicht schach *)
         IF (tiefe < maxTiefe) THEN tiefe:=tiefe + 1;
-        (**) IF ((aktuell^.geschlagen<>NIL)AND(figurangr(aktuell^.nachpos,aktuell^.geschlagen)))
-               THEN bewertung := (cmaxinteger-tiefe-ck+aktuell^.geschlagen^.art)*farbe
+        (**) IF ((aktuell^.geschlagen<>NIL)(**)AND(figurangr(aktuell^.nachpos,aktuell^.geschlagen))(**))
+               THEN bewertung := (cmaxinteger-tiefe*ck+aktuell^.geschlagen^.art)*farbe
                ELSE (**) bewertung := AlphaBeta (-farbe,beta,alpha,tiefe,maxTiefe,linie+'-',letzterzug);
 
         IF ((farbe=cweiss)  AND(bewertung>alpha)) THEN alpha:=bewertung;
@@ -3580,6 +3582,7 @@ END;
 
 
  FUNCTION computerzug (farbe, alpha, beta, tiefe, maxTiefe: INTEGER;linie:STRING): INTEGER;
+  CONST c1= +1;
   VAR bewertung,zuglistenzaehler,schachzaehler: INTEGER;
       zugliste,aktuell:Tzugliste;
       zug,computerzieht:Tziehe;
@@ -3630,7 +3633,7 @@ END;
 
          brettZugSetzen (brett,zug);
 
-         IF  (schach(farbe)OR damegef(farbe)OR turmgef(farbe)OR springergef(farbe)  OR laeufergef(farbe) OR bauergef(farbe))
+         IF  (schach(farbe)(*OR damegef(farbe)OR turmgef(farbe)OR springergef(farbe)  OR laeufergef(farbe) OR bauergef(farbe)*))
          THEN
          BEGIN
           brettZugZuruecknehmen (brett,zug); schachzaehler:=schachzaehler+c1;
@@ -3640,11 +3643,13 @@ END;
 
          (* ANFANG nicht schach *)
 
-         IF ((aktuell^.geschlagen<>NIL)AND(figurangr(aktuell^.geschlagen^.pos(*aktuell^.nachpos*),aktuell^.geschlagen)))
+         IF ((aktuell^.geschlagen<>NIL)(**)AND(figurangr(aktuell^.geschlagen^.pos(*aktuell^.nachpos*),aktuell^.geschlagen))(**))
                (*(((aktuell^.vonpos = G2) AND (aktuell^.nachpos = G3) )OR((aktuell^.vonpos =B7) AND (aktuell^.nachpos =B6)))
                *)
-               THEN bewertung := (*maxinteger*)(c1000-ck+aktuell^.geschlagen^.art)*farbe
-               ELSE bewertung := alphabeta (-farbe,beta,alpha,tiefe+1,maxTiefe,linie+'-',zug);
+               THEN bewertung := (*c1000*)(cmaxinteger-ck+aktuell^.geschlagen^.art)*farbe
+               ELSE bewertung := (*bewerteZug(farbe);*)(**)alphabeta (-farbe,beta,alpha,tiefe+1,maxTiefe,linie+'-',zug);(**)
+
+
 
 
          IF ((farbe=cweiss)  AND(bewertung>alpha))
@@ -3915,6 +3920,7 @@ END;
  END;
 
  FUNCTION computerzugSPIELER (Spielerzug:Tziehe;farbe:INTEGER;linie:STRING):BOOLEAN;
+CONST c1 = +1;
 VAR bewertung,zuglistenzaehler,schachzaehler: INTEGER;
      zugliste,aktuell:Tzugliste;
      zug,computerzieht:Tziehe;
