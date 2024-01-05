@@ -38,7 +38,7 @@ CONST cweiss       =      1;
       ck           =     99;
       dumy         =    100;
       leer         =      0;
-      ctiefe       =     12;
+      ctiefe       =      6;
       c1000        =   1000;
 
       A1=21;
@@ -1439,7 +1439,7 @@ BEGIN
 
 END;
 
-FUNCTION figurangr(feld:SHORTINT; VAR aktuellefigur:Tfigurenliste):BOOLEAN;
+FUNCTION figurangr(schlagart,feld:SHORTINT; VAR aktuellefigur:Tfigurenliste):BOOLEAN;
 CONST
       auf   = 10;
       ab    =-10;
@@ -1866,7 +1866,7 @@ BEGIN  (*showmessage(' -> H1='+inttostr(brett(.H1.)));*)
   (* Figur Verteidigt END *)
 
 
-    IF figurbedroht < figurverteidigt THEN figurangr:=false ELSE  figurangr:=true
+    IF figurbedroht < figurverteidigt THEN figurangr:=false ELSE  figurangr:=true;
   (*IF (figurbedroht > c0) (*AND (figurverteidigt = c0)*) THEN BEGIN showmessage('>0');figurangr:=true END ELSE showmessage('<0');*)
   (*figurangr:=true;*)
   (*
@@ -1874,9 +1874,19 @@ BEGIN  (*showmessage(' -> H1='+inttostr(brett(.H1.)));*)
      THEN
       BEGIN
        IF (kleinsterwertangriff <= aktuellefigur^.art)
-       THEN figurangr:=true;
+       THEN figurangr:=true ELSE figurangr:=false;
+      END;
+    *)
+
+    IF (figurverteidigt > c0)
+     THEN
+      BEGIN
+       (*showmessage('bedroht');*)
+       IF (ABS(aktuellefigur^.art) >= ABS(schlagart))
+       THEN BEGIN (*showmessage(' aber akzeptabel');*) figurangr:=true END ELSE BEGIN (*showmessage(' nicht akzeptabel');*)figurangr:=false; END
       END
-  *)
+     ELSE BEGIN (*showmessage('nicht bedroht');*) figurangr:=true; END;
+
 
 END;
 
@@ -3452,7 +3462,7 @@ END;
 
         brettZugSetzen (brett,zug);
 
-        IF  (schach(farbe)(*OR damegef(farbe)OR turmgef(farbe)OR springergef(farbe) OR laeufergef(farbe) OR bauergef(farbe)*))
+        IF  (schach(farbe) OR damegef(farbe)OR turmgef(farbe)  OR springergef(farbe) OR laeufergef(farbe) (* OR bauergef(farbe) *))
         THEN
         BEGIN
          brettZugZuruecknehmen (brett,zug);
@@ -3462,7 +3472,7 @@ END;
 
         (* ANFANG nicht schach *)
         IF (tiefe < maxTiefe) THEN tiefe:=tiefe + 1;
-        (**) IF ((aktuell^.geschlagen<>NIL)(**)AND(figurangr(aktuell^.nachpos,aktuell^.geschlagen))(**))
+        (**) IF ((aktuell^.geschlagen<>NIL)(**)AND(figurangr(aktuell^.art,aktuell^.nachpos,aktuell^.geschlagen))(**))
                THEN bewertung := (cmaxinteger-tiefe*ck+aktuell^.geschlagen^.art)*farbe
                ELSE (**) bewertung := AlphaBeta (-farbe,beta,alpha,tiefe,maxTiefe,linie+'-',letzterzug);
 
@@ -3633,7 +3643,7 @@ END;
 
          brettZugSetzen (brett,zug);
 
-         IF  (schach(farbe)(*OR damegef(farbe)OR turmgef(farbe)OR springergef(farbe)  OR laeufergef(farbe) OR bauergef(farbe)*))
+         IF  (schach(farbe)  OR damegef(farbe)OR turmgef(farbe) OR springergef(farbe)  OR laeufergef(farbe) (* OR bauergef(farbe)*))
          THEN
          BEGIN
           brettZugZuruecknehmen (brett,zug); schachzaehler:=schachzaehler+c1;
@@ -3643,7 +3653,7 @@ END;
 
          (* ANFANG nicht schach *)
 
-         IF ((aktuell^.geschlagen<>NIL)(**)AND(figurangr(aktuell^.geschlagen^.pos(*aktuell^.nachpos*),aktuell^.geschlagen))(**))
+         IF ((aktuell^.geschlagen<>NIL)(**)AND(figurangr(aktuell^.art,aktuell^.geschlagen^.pos(*aktuell^.nachpos*),aktuell^.geschlagen))(**))
                (*(((aktuell^.vonpos = G2) AND (aktuell^.nachpos = G3) )OR((aktuell^.vonpos =B7) AND (aktuell^.nachpos =B6)))
                *)
                THEN bewertung := (*c1000*)(cmaxinteger-ck+aktuell^.geschlagen^.art)*farbe
