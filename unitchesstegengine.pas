@@ -1878,17 +1878,58 @@ BEGIN  (*showmessage(' -> H1='+inttostr(brett(.H1.)));*)
       END;
     *)
 
-    IF (figurverteidigt > c0)
+    IF (figurbedroht > c0)
      THEN
       BEGIN
        (*showmessage('bedroht');*)
-       IF (ABS(aktuellefigur^.art) >= ABS(schlagart))
+       IF (ABS(aktuellefigur^.art) <= ABS(schlagart))   (* <= >= *)
        THEN BEGIN (*showmessage(' aber akzeptabel');*) figurangr:=true END ELSE BEGIN (*showmessage(' nicht akzeptabel');*)figurangr:=false; END
       END
      ELSE BEGIN (*showmessage('nicht bedroht');*) figurangr:=true; END;
 
 
 END;
+
+
+FUNCTION figurangreifen (schlagart,feld:SHORTINT; VAR aktuellefigur:Tfigurenliste;zug:Tziehe):BOOLEAN;
+
+
+
+VAR
+     figurbedroht,bewertung: INTEGER;
+     zugliste, zuglisteGegner, aktuell, aktuellGegner:Tzugliste;
+
+
+CONST
+     c1 = +1;
+
+
+BEGIN
+
+    Figurbedroht :=c0;
+    zuglisteGegner:=nil;
+    zuglisteGegner:= zuggenerator(-aktuellefigur^.farbe,zug);
+    aktuellGegner := zuglisteGegner;
+       WHILE aktuellGegner <> NIL DO
+       BEGIN
+         IF aktuellGegner^.geschlagen<>NIL THEN IF aktuellGegner^.geschlagen^.pos = feld THEN figurbedroht := figurbedroht + c1;
+         IF (aktuellGegner <>nil) THEN aktuellGegner := aktuellGegner^.nach;
+       END;
+    IF (zuglisteGegner<>NIL)
+        THEN zugAbbau('-',-aktuellefigur^.farbe,zuglisteGegner);
+
+
+    IF (figurbedroht > c0)
+     THEN
+      BEGIN
+       IF (ABS(aktuellefigur^.art) <= ABS(schlagart))
+       THEN  figurangreifen:=true ELSE figurangreifen:=false
+      END
+     ELSE  figurangreifen:=true
+
+
+END;
+
 
 FUNCTION attakiert(feld:SHORTINT; VAR aktuellefigur:Tfigurenliste):BOOLEAN;
 CONST
@@ -3472,7 +3513,7 @@ END;
 
         (* ANFANG nicht schach *)
         IF (tiefe < maxTiefe) THEN tiefe:=tiefe + 1;
-        (**) IF ((aktuell^.geschlagen<>NIL)(**)AND(figurangr(aktuell^.art,aktuell^.nachpos,aktuell^.geschlagen))(**))
+        (**) IF ((aktuell^.geschlagen<>NIL)(**)AND(figurangreifen(aktuell^.art,aktuell^.nachpos,aktuell^.geschlagen,letzterzug))(**))
                THEN bewertung := (cmaxinteger-tiefe*ck+aktuell^.geschlagen^.art)*farbe
                ELSE (**) bewertung := AlphaBeta (-farbe,beta,alpha,tiefe,maxTiefe,linie+'-',letzterzug);
 
@@ -3653,7 +3694,7 @@ END;
 
          (* ANFANG nicht schach *)
 
-         IF ((aktuell^.geschlagen<>NIL)(**)AND(figurangr(aktuell^.art,aktuell^.geschlagen^.pos(*aktuell^.nachpos*),aktuell^.geschlagen))(**))
+         IF ((aktuell^.geschlagen<>NIL)(**)AND(figurangreifen(aktuell^.art,aktuell^.geschlagen^.pos(*aktuell^.nachpos*),aktuell^.geschlagen,zug))(**))
                (*(((aktuell^.vonpos = G2) AND (aktuell^.nachpos = G3) )OR((aktuell^.vonpos =B7) AND (aktuell^.nachpos =B6)))
                *)
                THEN bewertung := (*c1000*)(cmaxinteger-ck+aktuell^.geschlagen^.art)*farbe
