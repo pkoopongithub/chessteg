@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chessteg – Didaktisches Schachprogramm</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      background-color: #f8f9fa;
+      color: #212529;
+    }
+
+    header {
+      position: relative;
+      text-align: center;
+    }
+
+    header img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    footer {
+      background-color: #343a40;
+      color: #fff;
+      text-align: center;
+      padding: 1rem;
+      margin-top: 2rem;
+      font-size: 0.9rem;
+    }
+
+    nav {
+      background-color: #343a40;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 0.5rem 1rem;
+    }
+
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      margin: 0.5rem 1rem;
+      font-weight: bold;
+    }
+
+    nav a:focus,
+    nav a:hover {
+      text-decoration: underline;
+      outline: none;
+    }
+
+    .container {
+      max-width: 1140px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .chessboard-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    /* Schachbrett */
+    .chessboard {
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      grid-template-rows: repeat(8, 60px);
+      border: 3px solid #8B4513;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    .chess-cell {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .chess-cell.white { background-color: #f0d9b5; }
+    .chess-cell.gray  { background-color: #b58863; }
+    .chess-cell:hover { background-color: #aec6cf !important; }
+    .chess-cell.selected { background-color: #ffeb3b !important; box-shadow: inset 0 0 0 2px #ff5722; }
+    .chess-cell.possible-move { background-color: #90EE90 !important; }
+    .chess-cell.possible-capture { background-color: #FFB6C1 !important; }
+
+    .chess-piece {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+    }
+
+    .coordinate {
+      position: absolute;
+      font-size: 12px;
+      font-weight: bold;
+      color: rgba(0,0,0,0.7);
+    }
+
+    .coordinate.file { bottom: 2px; right: 4px; }
+    .coordinate.rank { top: 2px; left: 4px; }
+
+    /* Steuerung */
+    .controls {
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      min-width: 300px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .control-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .control-group h3 {
+      margin-top: 0;
+      color: #343a40;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 0.5rem;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 0.25rem;
+      text-decoration: none;
+      cursor: pointer;
+      margin: 0.25rem;
+      transition: background-color 0.2s;
+    }
+
+    .btn:hover { background-color: #0056b3; }
+    .btn-primary { background-color: #28a745; }
+    .btn-primary:hover { background-color: #1e7e34; }
+    .btn-danger { background-color: #dc3545; }
+    .btn-danger:hover { background-color: #c82333; }
+
+    .zug-input {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin: 1rem 0;
+    }
+
+    .zug-input input {
+      padding: 0.5rem;
+      border: 2px solid #ced4da;
+      border-radius: 0.25rem;
+      font-size: 1rem;
+      width: 100px;
+      text-align: center;
+    }
+
+    .status-info, .spiel-info {
+      background: #e9ecef;
+      padding: 1rem;
+      border-radius: 0.25rem;
+      margin: 1rem 0;
+    }
+
+    .spiel-info { background: #d4edda; border-left: 4px solid #28a745; }
+    .status-info { border-left: 4px solid #007bff; }
+
+    .status-info .am-zug {
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #343a40;
+    }
+
+    @media (max-width: 768px) {
+      .chessboard {
+        grid-template-columns: repeat(8, 40px);
+        grid-template-rows: repeat(8, 40px);
+      }
+      .chess-cell { width: 40px; height: 40px; }
+      .chess-piece { width: 35px; height: 35px; }
+      .chessboard-container { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="img/headerbild.jpeg" alt="Chessteg Header" />
+  </header>
+
+  <nav>
+    <a href="https://pkoopongithub.github.io/">Home</a>
+    <a href="https://pkoopongithub.github.io/duesseldorfer-schuelerinventar-bootstrap-mysql-php/">Düsk</a>
+    <a href="https://pkoopongithub.github.io/algorithmisch-rekursive-sequenzanalyse/">Ars</a>
+    <a href="https://pkoopongithub.github.io/Projekt_Pompeji/">Pompeji</a>
+    <a href="https://pkoopongithub.github.io/DavidDeutschMetaphysicalMeditations/">Pencil</a>
+    <a href="https://pkoopongithub.github.io/primaten/">Primaten</a>
+    <a href="https://pkoopongithub.github.io/genalg/">GenAlg</a>
+    <a href="https://pkoopongithub.github.io/chessteg/">Chessteg</a>
+  </nav>
+
+  <div class="container">
+    <h1 class="text-center">Chessteg – Didaktisches Schachprogramm</h1>
+    <p class="text-center mb-4">
+      Schachprogramm mit Alpha-Beta-Suche und didaktischer Ausrichtung (1994 ursprünglich als Pascal Programm zur Überprüfung der Nutzbarkeit von Nullsummenspielen für ARS entwickelt)
+    </p>
+
+    <div class="chessboard-container">
+      <div>
+        <div class="chessboard" id="chessboard">
+          <!-- Wird dynamisch mit JavaScript gefüllt -->
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <h3>Spielsteuerung</h3>
+          <div class="status-info">
+            <span class="am-zug" id="amZug">Weiß am Zug</span>
+          </div>
+          <button class="btn btn-primary" id="btnNaechsterZug">Nächster Zug</button>
+          <button class="btn" id="btnWeisserZug">Weißer Zug</button>
+          <button class="btn" id="btnSchwarzerZug">Schwarzer Zug</button>
+
+          <div style="margin-top: 1rem;">
+            <button class="btn btn-primary" id="btnComputerZug">Computerzug</button>
+            <button class="btn" id="btnSpielerVsKI">Spieler vs KI</button>
+            <button class="btn" id="btnKIVsKI">KI vs KI</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3>Spielerzug</h3>
+          <div class="zug-input">
+            <label>Von:</label>
+            <input type="text" id="vonInput" placeholder="z.B. e2" />
+            <label>Nach:</label>
+            <input type="text" id="nachInput" placeholder="z.B. e4" />
+          </div>
+          <button class="btn btn-primary" id="btnSpielerZieht">Spieler zieht</button>
+        </div>
+
+        <div class="control-group">
+          <h3>Spielinformation</h3>
+          <div class="spiel-info">
+            <div><strong>Bewertung:</strong> <span id="bewertung">0</span></div>
+            <div><strong>Status:</strong> <span id="spielStatus">Läuft</span></div>
+            <div><strong>Rochade:</strong> <span id="rochadeInfo">Möglich</span></div>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3>System</h3>
+          <button class="btn" id="btnNeuesSpiel">Neues Spiel</button>
+          <button class="btn btn-danger" id="btnReset">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Paul Koop &middot; Chessteg – Didaktisches Schachprogramm<br />
+    Original in Pascal (1994–1995), portiert zu JavaScript/HTML<br />
+    <a href="https://github.com/pkoopongithub/chessteg" style="color: #ffc107; text-decoration: none;">Chessteg auf GitHub</a>
+  </footer>
+
+  <script src="js/chessteg.js"></script>
+  <script src="js/chess-ui.js"></script>
+</body>
+</html>
