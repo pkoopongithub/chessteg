@@ -1,0 +1,17 @@
+chessteg_modular/
+├── main.py
+├── engine/
+│   ├── __init__.py
+│   ├── core.py
+│   ├── move_generation.py
+│   ├── evaluation.py
+│   ├── search.py
+│   └── rules.py
+├── gui/
+│   ├── __init__.py
+│   ├── init.py (wahrscheinlich funktionslos?)
+│   ├── chess_board.py
+│   └── chess_gui.py
+└── tests/
+    ├── __init__.py
+    └── test_engine.py
