@@ -71,13 +71,14 @@
       align-items: flex-start;
     }
 
-    /* Schachbrett */
+    /* Schachbrett - KORRIGIERT */
     .chessboard {
       display: grid;
       grid-template-columns: repeat(8, 60px);
       grid-template-rows: repeat(8, 60px);
       border: 3px solid #8B4513;
       box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      background-color: #f0d9b5; /* Fallback-Hintergrund */
     }
 
     .chess-cell {
@@ -89,6 +90,8 @@
       position: relative;
       cursor: pointer;
       transition: background-color 0.2s;
+      font-size: 40px; /* Für Unicode-Figuren */
+      font-weight: bold;
     }
 
     .chess-cell.white { background-color: #f0d9b5; }
@@ -98,10 +101,24 @@
     .chess-cell.possible-move { background-color: #90EE90 !important; }
     .chess-cell.possible-capture { background-color: #FFB6C1 !important; }
 
+    /* NEU: Unicode-Figuren Styling */
+    .chess-piece-unicode {
+      font-size: 40px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 1;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .chess-piece {
       width: 50px;
       height: 50px;
       object-fit: contain;
+      display: none; /* Standardmäßig versteckt bis SVG funktioniert */
     }
 
     .coordinate {
@@ -109,6 +126,7 @@
       font-size: 12px;
       font-weight: bold;
       color: rgba(0,0,0,0.7);
+      z-index: 2;
     }
 
     .coordinate.file { bottom: 2px; right: 4px; }
@@ -185,14 +203,264 @@
       color: #343a40;
     }
 
+    /* NEU: Modus-Anzeige */
+    .modus-info {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .berechnungszeit {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+
     @media (max-width: 768px) {
       .chessboard {
         grid-template-columns: repeat(8, 40px);
         grid-template-rows: repeat(8, 40px);
       }
-      .chess-cell { width: 40px; height: 40px; }
+      .chess-cell { 
+        width: 40px; 
+        height: 40px; 
+        font-size: 30px; /* Kleinere Schrift für Mobile */
+      }
       .chess-piece { width: 35px; height: 35px; }
+      .chess-piece-unicode { font-size: 30px; }
       .chessboard-container { flex-direction: column; align-items: center; }
+    }
+/* Korrigierte CSS für bessere Sichtbarkeit */
+.chess-piece-unicode {
+    font-size: 40px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Bessere Lesbarkeit auf beiden Hintergrundfarben */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.chess-cell.white { 
+    background-color: #f0d9b5; /* Helles Feld */
+}
+
+.chess-cell.gray  { 
+    background-color: #b58863; /* Dunkles Feld */ 
+}
+
+/* Sicherstellen, dass weiße Figuren auf dunklen Feldern gut sichtbar sind */
+.chess-cell.gray .chess-piece-unicode {
+    filter: drop-shadow(0 0 1px rgba(255,255,255,0.7));
+}
+
+/* Sicherstellen, dass schwarze Figuren auf hellen Feldern gut sichtbar sind */
+.chess-cell.white .chess-piece-unicode {
+    filter: drop-shadow(0 0 1px rgba(0,0,0,0.7));
+}
+.chess-piece-unicode {
+    font-size: 40px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Verbesserte Sichtbarkeit auf beiden Feldtypen */
+}
+
+/* Weiße Figuren auf dunklen Feldern hervorheben */
+.chess-cell.gray .chess-piece-unicode {
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
+}
+
+/* Schwarze Figuren auf hellen Feldern hervorheben */
+.chess-cell.white .chess-piece-unicode {
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.8));
+}
+
+.chess-cell.white { 
+    background-color: #f0d9b5; /* Helles Feld - klassisches Schachbrett-Beige */
+}
+
+.chess-cell.gray  { 
+    background-color: #b58863; /* Dunkles Feld - klassisches Schachbrett-Braun */
+}
+
+/* ZUG-RÜCKNAHME STYLES */
+.zug-navigation {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.zug-navigation .btn {
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.zug-info {
+    background: #e9ecef;
+    border-left: 4px solid #6c757d;
+}
+
+.zug-info div {
+    margin-bottom: 0.25rem;
+}
+
+.zug-info div:last-child {
+    margin-bottom: 0;
+}
+
+/* Animation für Rücknahme */
+@keyframes fadeOut {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    70% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+/* Responsive Design für Mobile */
+@media (max-width: 768px) {
+    .zug-navigation {
+        flex-direction: column;
+    }
+    
+    .zug-navigation .btn {
+        min-width: auto;
+    }
+    
+    .zug-info {
+        font-size: 11px;
+    }
+}
+
+/* Button States */
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+    background-color: #6c757d;
+}
+
+    /* NEU: EDITOR-STYLES */
+    .editor-controls {
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .editor-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+
+    .editor-figur {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      background: white;
+      transition: all 0.2s;
+    }
+
+    .editor-figur:hover {
+      border-color: #007bff;
+      transform: scale(1.1);
+    }
+
+    .editor-figur.aktiv {
+      border-color: #28a745;
+      background: #e8f5e8;
+    }
+
+    .editor-modus-toggle {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .editor-status {
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+
+    .editor-status.valid {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .editor-status.invalid {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .zug-rechte {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .zug-rechte label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    /* Hervorhebung für Editor-Modus */
+    .editor-mode .chess-cell {
+      cursor: crosshair;
+    }
+
+    .editor-mode .chess-cell:hover {
+      background-color: #aec6cf !important;
+    }
+
+    .chess-cell.has-figur {
+      position: relative;
+    }
+
+    .chess-cell.has-figur::after {
+      content: '🗑️';
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .editor-mode .chess-cell.has-figur:hover::after {
+      opacity: 1;
     }
   </style>
 </head>
@@ -218,6 +486,42 @@
       <a href="https://github.com/pkoopongithub/chessteg" class="btn">Mehr erfahren / Learn more</a>
     </p>
 
+    <!-- NEU: EDITOR-CONTROLS -->
+    <div class="editor-controls" id="editorControls" style="display: none;">
+      <h3>🎨 Brett-Editor</h3>
+      
+      <div class="editor-modus-toggle">
+        <button class="btn btn-primary" id="btnEditorSpielen">🎮 Zum Spielen</button>
+        <div style="flex-grow: 1;"></div>
+        <button class="btn" id="btnEditorLeeresBrett">🧹 Leeres Brett</button>
+        <button class="btn" id="btnEditorGrundstellung">♟️ Grundstellung</button>
+      </div>
+
+      <div class="editor-toolbar" id="editorToolbar">
+        <!-- Wird dynamisch mit JavaScript gefüllt -->
+      </div>
+
+      <div class="zug-rechte">
+        <label>
+          <input type="radio" name="amZugEditor" value="weiss" checked>
+          <span>Weiß am Zug</span>
+        </label>
+        <label>
+          <input type="radio" name="amZugEditor" value="schwarz">
+          <span>Schwarz am Zug</span>
+        </label>
+      </div>
+
+      <div class="editor-status" id="editorStatus">
+        Stellung wird validiert...
+      </div>
+
+      <div class="editor-actions">
+        <button class="btn btn-primary" id="btnEditorUebernehmen">✅ Stellung übernehmen</button>
+        <button class="btn" id="btnEditorVerwerfen">❌ Verwerfen</button>
+      </div>
+    </div>
+
     <div class="chessboard-container">
       <div>
         <div class="chessboard" id="chessboard">
@@ -228,6 +532,9 @@
       <div class="controls">
         <div class="control-group">
           <h3>Spielsteuerung</h3>
+          <!-- NEU: EDITOR-BUTTON -->
+          <button class="btn" id="btnBrettEditor">🎨 Brett-Editor</button>
+          
           <div class="status-info">
             <span class="am-zug" id="amZug">Weiß am Zug</span>
           </div>
@@ -281,6 +588,3 @@
   <script src="js/chess-ui.js"></script>
 </body>
 </html>
-
-
-
