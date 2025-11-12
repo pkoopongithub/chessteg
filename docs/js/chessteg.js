@@ -1,4 +1,4 @@
-// chessteg.js - Korrigierte Schach-Engine mit verbesserter KI
+// chessteg.js - Erweiterte Schach-Engine mit verbesserter KI
 class ChesstegEngine {
     constructor() {
         this.brett = this.initialisiereBrett();
@@ -9,105 +9,108 @@ class ChesstegEngine {
         this.patt = false;
         this.letzterZug = null;
         this.zugHistorie = [];
+        this.historieIndex = -1;
         
-        // Optimierte KI-Einstellungen
-        this.kiEinstellungen = {
-            suchtiefe: 3,
-            erweiterteBewertung: true,
-            quiescenceSearch: true,
-            quiescenceTiefe: 2,
-            timeoutMs: 8000 // 8 Sekunden Timeout
+        // Spezialzug-Variablen
+        this.rochadeRechte = {
+            weissKurz: true,
+            weissLang: true,  
+            schwarzKurz: true,
+            schwarzLang: true
         };
+        this.enPassantTarget = null;
+        this.halbzugCounter = 0;
+        this.vollzugCounter = 1;
         
-        // Verbesserte Bewertungstabellen
-        this.bewertungsTabelle = {
-            material: {
-                [BAUER]: 100,
-                [SPRINGER]: 320,
-                [LAEUFER]: 330,
-                [TURM]: 500,
-                [DAME]: 900,
-                [KOENIG]: 20000
-            },
-            
-            // Optimierte Positionsbewertung
-            position: {
-                [BAUER]: [
-                    [0,   0,   0,   0,   0,   0,   0,   0],
-                    [50,  50,  50,  50,  50,  50,  50,  50],
-                    [10,  10,  20,  30,  30,  20,  10,  10],
-                    [5,   5,  10,  25,  25,  10,   5,   5],
-                    [0,   0,   0,  20,  20,   0,   0,   0],
-                    [5,  -5, -10,   0,   0, -10,  -5,   5],
-                    [5,  10,  10, -20, -20,  10,  10,   5],
-                    [0,   0,   0,   0,   0,   0,   0,   0]
-                ],
-                
-                [SPRINGER]: [
-                    [-50, -40, -30, -30, -30, -30, -40, -50],
-                    [-40, -20,   0,   5,   5,   0, -20, -40],
-                    [-30,   5,  10,  15,  15,  10,   5, -30],
-                    [-30,   0,  15,  20,  20,  15,   0, -30],
-                    [-30,   5,  15,  20,  20,  15,   5, -30],
-                    [-30,   0,  10,  15,  15,  10,   0, -30],
-                    [-40, -20,   0,   0,   0,   0, -20, -40],
-                    [-50, -40, -30, -30, -30, -30, -40, -50]
-                ],
-                
-                [LAEUFER]: [
-                    [-20, -10, -10, -10, -10, -10, -10, -20],
-                    [-10,   0,   0,   0,   0,   0,   0, -10],
-                    [-10,   0,   5,  10,  10,   5,   0, -10],
-                    [-10,   5,   5,  10,  10,   5,   5, -10],
-                    [-10,   0,  10,  10,  10,  10,   0, -10],
-                    [-10,  10,  10,  10,  10,  10,  10, -10],
-                    [-10,   5,   0,   0,   0,   0,   5, -10],
-                    [-20, -10, -10, -10, -10, -10, -10, -20]
-                ],
-                
-                [TURM]: [
-                    [0,   0,   0,   5,   5,   0,   0,   0],
-                    [-5,   0,   0,   0,   0,   0,   0,  -5],
-                    [-5,   0,   0,   0,   0,   0,   0,  -5],
-                    [-5,   0,   0,   0,   0,   0,   0,  -5],
-                    [-5,   0,   0,   0,   0,   0,   0,  -5],
-                    [-5,   0,   0,   0,   0,   0,   0,  -5],
-                    [5,  10,  10,  10,  10,  10,  10,   5],
-                    [0,   0,   0,   0,   0,   0,   0,   0]
-                ],
-                
-                [DAME]: [
-                    [-20, -10, -10, -5, -5, -10, -10, -20],
-                    [-10,   0,   5,  0,  0,   0,   0, -10],
-                    [-10,   5,   5,  5,  5,   5,   0, -10],
-                    [0,     0,   5,  5,  5,   5,   0,  -5],
-                    [-5,    0,   5,  5,  5,   5,   0,  -5],
-                    [-10,   0,   5,  5,  5,   5,   0, -10],
-                    [-10,   0,   0,  0,  0,   0,   0, -10],
-                    [-20, -10, -10, -5, -5, -10, -10, -20]
-                ],
-                
-                [KOENIG]: [
-                    [20,  30,  10,   0,   0,  10,  30,  20],
-                    [20,  20,   0,   0,   0,   0,  20,  20],
-                    [-10, -20, -20, -20, -20, -20, -20, -10],
-                    [-20, -30, -30, -40, -40, -30, -30, -20],
-                    [-30, -40, -40, -50, -50, -40, -40, -30],
-                    [-30, -40, -40, -50, -50, -40, -40, -30],
-                    [-30, -40, -40, -50, -50, -40, -40, -30],
-                    [-30, -40, -40, -50, -50, -40, -40, -30]
-                ]
-            }
+        // ERWEITERT: KI-Einstellungen
+        this.kiEinstellungen = {
+            suchtiefe: 3, // Erhöhte Standardtiefe
+            erweiterteBewertung: true,
+            timeoutMs: 5000,
+            useMoveOrdering: true,
+            useQuiescenceSearch: true
         };
 
         this.zugCounter = 0;
         this.knotenZaehler = 0;
         this.berechnungsStartzeit = 0;
         
+        // NEU: Transposition Table Vorbereitung
+        this.transpositionTable = new Map();
+        this.zobristKeys = this.initialisiereZobristKeys();
+        
+        // NEU: History Heuristic für Move Ordering
+        this.historyHeuristic = new Array(120).fill().map(() => new Array(120).fill(0));
+        
         this.initialisiereFiguren();
     }
 
-    // Bestehende Methoden (unchanged)
+    // NEU: Zobrist Hashing für Transposition Table
+    initialisiereZobristKeys() {
+        const keys = {
+            figuren: {},
+            schwarzAmZug: Math.floor(Math.random() * 2**32),
+            rochade: {},
+            enPassant: {}
+        };
+        
+        // Zufallszahlen für jede Figur auf jedem Feld
+        for (let pos = 0; pos < 120; pos++) {
+            if (this.brett[pos] !== DUMMY) {
+                keys.figuren[pos] = {};
+                [-KOENIG, -DAME, -TURM, -LAEUFER, -SPRINGER, -BAUER, 
+                 BAUER, SPRINGER, LAEUFER, TURM, DAME, KOENIG].forEach(figur => {
+                    if (figur !== 0) {
+                        keys.figuren[pos][figur] = Math.floor(Math.random() * 2**32);
+                    }
+                });
+            }
+        }
+        
+        // Rochade-Rechte
+        ['weissKurz', 'weissLang', 'schwarzKurz', 'schwarzLang'].forEach(recht => {
+            keys.rochade[recht] = Math.floor(Math.random() * 2**32);
+        });
+        
+        // En Passant
+        for (let pos = 0; pos < 120; pos++) {
+            keys.enPassant[pos] = Math.floor(Math.random() * 2**32);
+        }
+        
+        return keys;
+    }
+
+    // NEU: Berechne Zobrist Hash für aktuelle Stellung
+    berechneZobristHash() {
+        let hash = 0;
+        
+        // Figuren
+        for (const figur of this.figurenListe) {
+            if (!figur.geschlagen) {
+                hash ^= this.zobristKeys.figuren[figur.pos][figur.art * figur.farbe];
+            }
+        }
+        
+        // Spieler am Zug
+        if (!this.weissAmZug) {
+            hash ^= this.zobristKeys.schwarzAmZug;
+        }
+        
+        // Rochade-Rechte
+        if (this.rochadeRechte.weissKurz) hash ^= this.zobristKeys.rochade.weissKurz;
+        if (this.rochadeRechte.weissLang) hash ^= this.zobristKeys.rochade.weissLang;
+        if (this.rochadeRechte.schwarzKurz) hash ^= this.zobristKeys.rochade.schwarzKurz;
+        if (this.rochadeRechte.schwarzLang) hash ^= this.zobristKeys.rochade.schwarzLang;
+        
+        // En Passant
+        if (this.enPassantTarget !== null) {
+            hash ^= this.zobristKeys.enPassant[this.enPassantTarget];
+        }
+        
+        return hash;
+    }
+
+    // Grundlegende Methoden
     initialisiereBrett() {
         const brett = new Array(120).fill(DUMMY);
         for (let r = 2; r <= 9; r++) {
@@ -125,32 +128,37 @@ class ChesstegEngine {
 
     initialisiereFiguren() {
         this.figurenListe = [];
-        // Könige
+        // Grundstellung
         this.fuegeFigurHinzu(KOENIG, SCHWARZ, 95);
         this.fuegeFigurHinzu(KOENIG, WEISS, 25);
-        // Damen
         this.fuegeFigurHinzu(DAME, SCHWARZ, 94);
         this.fuegeFigurHinzu(DAME, WEISS, 24);
-        // Türme
         this.fuegeFigurHinzu(TURM, SCHWARZ, 91);
         this.fuegeFigurHinzu(TURM, SCHWARZ, 98);
         this.fuegeFigurHinzu(TURM, WEISS, 21);
         this.fuegeFigurHinzu(TURM, WEISS, 28);
-        // Springer
         this.fuegeFigurHinzu(SPRINGER, SCHWARZ, 92);
         this.fuegeFigurHinzu(SPRINGER, SCHWARZ, 97);
         this.fuegeFigurHinzu(SPRINGER, WEISS, 22);
         this.fuegeFigurHinzu(SPRINGER, WEISS, 27);
-        // Läufer
         this.fuegeFigurHinzu(LAEUFER, SCHWARZ, 93);
         this.fuegeFigurHinzu(LAEUFER, SCHWARZ, 96);
         this.fuegeFigurHinzu(LAEUFER, WEISS, 23);
         this.fuegeFigurHinzu(LAEUFER, WEISS, 26);
-        // Bauern
         for (let i = 1; i <= 8; i++) {
             this.fuegeFigurHinzu(BAUER, SCHWARZ, 80 + i);
             this.fuegeFigurHinzu(BAUER, WEISS, 30 + i);
         }
+        
+        // Reset Spezialzüge
+        this.rochadeRechte = { weissKurz: true, weissLang: true, schwarzKurz: true, schwarzLang: true };
+        this.enPassantTarget = null;
+        this.halbzugCounter = 0;
+        this.vollzugCounter = 1;
+        this.zugHistorie = [];
+        this.historieIndex = -1;
+        this.zugCounter = 0;
+        this.transpositionTable.clear();
     }
 
     istGegner(farbe, feldWert) {
@@ -158,6 +166,7 @@ class ChesstegEngine {
         return (farbe > 0 && feldWert < 0) || (farbe < 0 && feldWert > 0);
     }
 
+    // ZUGGENERIERUNG
     generiereZuege(farbe) {
         let alleZuege = [];
         
@@ -173,20 +182,13 @@ class ChesstegEngine {
 
     generiereFigurenZuege(figur) {
         switch (figur.art) {
-            case TURM:
-                return this.generiereTurmZuege(figur);
-            case LAEUFER:
-                return this.generiereLaeuferZuege(figur);
-            case DAME:
-                return this.generiereDameZuege(figur);
-            case SPRINGER:
-                return this.generiereSpringerZuege(figur);
-            case KOENIG:
-                return this.generiereKoenigsZuege(figur);
-            case BAUER:
-                return this.generiereBauernZuege(figur);
-            default:
-                return [];
+            case TURM: return this.generiereTurmZuege(figur);
+            case LAEUFER: return this.generiereLaeuferZuege(figur);
+            case DAME: return this.generiereDameZuege(figur);
+            case SPRINGER: return this.generiereSpringerZuege(figur);
+            case KOENIG: return this.generiereKoenigsZuege(figur);
+            case BAUER: return this.generiereBauernZuege(figur);
+            default: return [];
         }
     }
 
@@ -196,7 +198,6 @@ class ChesstegEngine {
         
         for (const richtung of richtungen) {
             let feld = figur.pos + richtung;
-            
             while (this.brett[feld] !== DUMMY) {
                 if (this.brett[feld] === LEER) {
                     zuege.push(this.erstelleZug(figur, feld));
@@ -218,7 +219,6 @@ class ChesstegEngine {
         
         for (const richtung of richtungen) {
             let feld = figur.pos + richtung;
-            
             while (this.brett[feld] !== DUMMY) {
                 if (this.brett[feld] === LEER) {
                     zuege.push(this.erstelleZug(figur, feld));
@@ -235,10 +235,7 @@ class ChesstegEngine {
     }
 
     generiereDameZuege(figur) {
-        return [
-            ...this.generiereTurmZuege(figur),
-            ...this.generiereLaeuferZuege(figur)
-        ];
+        return [...this.generiereTurmZuege(figur), ...this.generiereLaeuferZuege(figur)];
     }
 
     generiereSpringerZuege(figur) {
@@ -247,23 +244,6 @@ class ChesstegEngine {
         
         for (const s of springerZuege) {
             const feld = figur.pos + s;
-            if (this.brett[feld] !== DUMMY) {
-                if (this.brett[feld] === LEER) {
-                    zuege.push(this.erstelleZug(figur, feld));
-                } else if (this.istGegner(figur.farbe, this.brett[feld])) {
-                    zuege.push(this.erstelleZug(figur, feld, true));
-                }
-            }
-        }
-        return zuege;
-    }
-
-    generiereKoenigsZuege(figur) {
-        const zuege = [];
-        const koenigZuege = [1, -1, 10, -10, 9, 11, -9, -11];
-        
-        for (const d of koenigZuege) {
-            const feld = figur.pos + d;
             if (this.brett[feld] !== DUMMY) {
                 if (this.brett[feld] === LEER) {
                     zuege.push(this.erstelleZug(figur, feld));
@@ -284,23 +264,57 @@ class ChesstegEngine {
         // Ein Feld vorwärts
         let feld = figur.pos + vorwaerts;
         if (this.brett[feld] === LEER) {
-            zuege.push(this.erstelleZug(figur, feld));
+            const zielReihe = Math.floor(feld / 10);
             
-            // Zwei Felder vorwärts von Startposition
-            if (aktuelleReihe === startreihe) {
-                const doppelfeld = feld + vorwaerts;
-                if (this.brett[doppelfeld] === LEER) {
-                    zuege.push(this.erstelleZug(figur, doppelfeld));
+            if ((figur.farbe === WEISS && zielReihe === 9) || 
+                (figur.farbe === SCHWARZ && zielReihe === 2)) {
+                // Umwandlung
+                [DAME, TURM, LAEUFER, SPRINGER].forEach(umwandlungsFigur => {
+                    zuege.push(this.erstelleZug(figur, feld, false, umwandlungsFigur));
+                });
+            } else {
+                zuege.push(this.erstelleZug(figur, feld));
+                
+                // Zwei Felder von Startposition
+                if (aktuelleReihe === startreihe) {
+                    const doppelfeld = feld + vorwaerts;
+                    if (this.brett[doppelfeld] === LEER) {
+                        zuege.push(this.erstelleZug(figur, doppelfeld));
+                    }
                 }
             }
         }
 
-        // Schlagen
+        // Schlagzüge
         for (const seite of [vorwaerts + 1, vorwaerts - 1]) {
             feld = figur.pos + seite;
             if (this.brett[feld] !== DUMMY && this.brett[feld] !== LEER) {
                 if (this.istGegner(figur.farbe, this.brett[feld])) {
-                    zuege.push(this.erstelleZug(figur, feld, true));
+                    const zielReihe = Math.floor(feld / 10);
+                    
+                    if ((figur.farbe === WEISS && zielReihe === 9) || 
+                        (figur.farbe === SCHWARZ && zielReihe === 2)) {
+                        // Umwandlung bei Schlag
+                        [DAME, TURM, LAEUFER, SPRINGER].forEach(umwandlungsFigur => {
+                            zuege.push(this.erstelleZug(figur, feld, true, umwandlungsFigur));
+                        });
+                    } else {
+                        zuege.push(this.erstelleZug(figur, feld, true));
+                    }
+                }
+            }
+        }
+
+        // En Passant
+        if (this.enPassantTarget) {
+            for (const seite of [vorwaerts + 1, vorwaerts - 1]) {
+                feld = figur.pos + seite;
+                if (feld === this.enPassantTarget) {
+                    const enPassantZug = this.erstelleZug(figur, feld, true);
+                    const geschlagenPos = figur.farbe === WEISS ? feld - 10 : feld + 10;
+                    enPassantZug.geschlagen = this.findeGeschlageneFigur(geschlagenPos);
+                    enPassantZug.enPassant = true;
+                    zuege.push(enPassantZug);
                 }
             }
         }
@@ -308,7 +322,124 @@ class ChesstegEngine {
         return zuege;
     }
 
-    erstelleZug(figur, zielPos, istSchlag = false) {
+    generiereKoenigsZuege(figur) {
+        const zuege = [];
+        const koenigZuege = [1, -1, 10, -10, 9, 11, -9, -11];
+        
+        // Normale Königszüge
+        for (const d of koenigZuege) {
+            const feld = figur.pos + d;
+            if (this.brett[feld] !== DUMMY) {
+                if (this.brett[feld] === LEER) {
+                    zuege.push(this.erstelleZug(figur, feld));
+                } else if (this.istGegner(figur.farbe, this.brett[feld])) {
+                    zuege.push(this.erstelleZug(figur, feld, true));
+                }
+            }
+        }
+
+        // ROCHADE
+        if (!this.istKoenigImSchach(figur.farbe)) {
+            const istWeiss = figur.farbe === WEISS;
+            const startReihe = istWeiss ? 2 : 9;
+            
+            // Kurze Rochade (Königsseite)
+            if (this.istRochadeMoeglich(figur.farbe, 'kurz')) {
+                const rochadeZug = this.erstelleZug(figur, startReihe * 10 + 7);
+                rochadeZug.rochade = 'kurz';
+                zuege.push(rochadeZug);
+            }
+            
+            // Lange Rochade (Dameneseite)
+            if (this.istRochadeMoeglich(figur.farbe, 'lang')) {
+                const rochadeZug = this.erstelleZug(figur, startReihe * 10 + 3);
+                rochadeZug.rochade = 'lang';
+                zuege.push(rochadeZug);
+            }
+        }
+
+        return zuege;
+    }
+
+    istRochadeMoeglich(farbe, seite) {
+        const istWeiss = farbe === WEISS;
+        const startReihe = istWeiss ? 2 : 9;
+        
+        // Rochade-Rechte prüfen
+        if (seite === 'kurz') {
+            if (!(istWeiss ? this.rochadeRechte.weissKurz : this.rochadeRechte.schwarzKurz)) {
+                return false;
+            }
+        } else {
+            if (!(istWeiss ? this.rochadeRechte.weissLang : this.rochadeRechte.schwarzLang)) {
+                return false;
+            }
+        }
+
+        // König muss auf Startposition sein
+        const koenigPos = startReihe * 10 + 5;
+        const koenig = this.figurenListe.find(f => 
+            f.art === KOENIG && f.farbe === farbe && f.pos === koenigPos && !f.geschlagen
+        );
+        if (!koenig) return false;
+
+        // Felder zwischen König und Turm müssen leer sein
+        let felderZuPruefen = [];
+        let turmPos;
+        
+        if (seite === 'kurz') {
+            turmPos = startReihe * 10 + 8;
+            felderZuPruefen = [koenigPos + 1, koenigPos + 2];
+        } else {
+            turmPos = startReihe * 10 + 1;
+            felderZuPruefen = [koenigPos - 1, koenigPos - 2, koenigPos - 3];
+        }
+
+        // Turm muss existieren
+        const turm = this.figurenListe.find(f => 
+            f.art === TURM && f.farbe === farbe && f.pos === turmPos && !f.geschlagen
+        );
+        if (!turm) return false;
+
+        // Felder müssen leer sein
+        for (const feld of felderZuPruefen) {
+            if (this.brett[feld] !== LEER) {
+                return false;
+            }
+        }
+
+        // König darf nicht durch Schach ziehen
+        const felderFuerSchachPruefung = seite === 'kurz' 
+            ? [koenigPos, koenigPos + 1, koenigPos + 2]
+            : [koenigPos, koenigPos - 1, koenigPos - 2];
+            
+        for (const feld of felderFuerSchachPruefung) {
+            if (this.istFeldBedroht(feld, farbe)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    istFeldBedroht(feld, farbe) {
+        const gegnerFarbe = -farbe;
+        
+        for (const figur of this.figurenListe) {
+            if (figur.geschlagen || figur.farbe !== gegnerFarbe) continue;
+            
+            const zuege = this.generiereFigurenZuegeOhneSchachpruefung(figur);
+            for (const zug of zuege) {
+                if (zug.nachPos === feld) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    erstelleZug(figur, zielPos, istSchlag = false, umwandlungsFigur = null) {
         const geschlageneFigur = istSchlag ? this.findeGeschlageneFigur(zielPos) : null;
         return {
             vonPos: figur.pos,
@@ -319,71 +450,12 @@ class ChesstegEngine {
                 art: geschlageneFigur.art,
                 farbe: geschlageneFigur.farbe,
                 pos: geschlageneFigur.pos
-            } : null
+            } : null,
+            umwandlungsFigur: umwandlungsFigur,
+            enPassant: false,
+            rochade: null,
+            istBauernDoppelschritt: figur.art === BAUER && Math.abs(zielPos - figur.pos) === 20
         };
-    }
-
-    istZugLegal(zug) {
-        if (zug.vonPos === zug.nachPos) {
-            return false;
-        }
-        
-        if (this.brett[zug.vonPos] === LEER || this.brett[zug.vonPos] === DUMMY) {
-            return false;
-        }
-        
-        const figurWert = this.brett[zug.vonPos];
-        const istWeissAmZug = this.weissAmZug;
-        
-        if ((istWeissAmZug && figurWert < 0) || (!istWeissAmZug && figurWert > 0)) {
-            return false;
-        }
-        
-        const zielWert = this.brett[zug.nachPos];
-        if (zielWert !== LEER && zielWert !== DUMMY) {
-            if ((istWeissAmZug && zielWert > 0) || (!istWeissAmZug && zielWert < 0)) {
-                return false;
-            }
-        }
-
-        // KORRIGIERTE Schach-Prüfung
-        const originalBrett = [...this.brett];
-        const originalFigurenListe = JSON.parse(JSON.stringify(this.figurenListe));
-
-        // Temporären Zug ausführen
-        this.brett[zug.vonPos] = LEER;
-        this.brett[zug.nachPos] = zug.art * zug.farbe;
-        
-        const ziehendeFigur = this.figurenListe.find(f => 
-            f.pos === zug.vonPos && !f.geschlagen && f.farbe === zug.farbe
-        );
-
-        if (ziehendeFigur) {
-            const ursprungsPos = ziehendeFigur.pos; // Ursprungsposition speichern
-            ziehendeFigur.pos = zug.nachPos;
-            
-            if (zug.geschlagen) {
-                const geschlageneFigurTemp = this.figurenListe.find(f => 
-                    f.pos === zug.nachPos && !f.geschlagen && f.farbe === -zug.farbe
-                );
-                if (geschlageneFigurTemp) {
-                    geschlageneFigurTemp.geschlagen = true;
-                }
-            }
-        
-            const imSchach = this.istKoenigImSchach(zug.farbe);
-        
-            // Zustand wiederherstellen - KORRIGIERT
-            this.brett = originalBrett;
-            this.figurenListe = JSON.parse(JSON.stringify(originalFigurenListe));
-            
-            return !imSchach;
-        }
-        
-        // Fallback: Zustand wiederherstellen
-        this.brett = originalBrett;
-        this.figurenListe = JSON.parse(JSON.stringify(originalFigurenListe));
-        return false;
     }
 
     findeGeschlageneFigur(position) {
@@ -391,575 +463,6 @@ class ChesstegEngine {
             f.pos === position && !f.geschlagen && 
             ((this.weissAmZug && f.farbe === SCHWARZ) || (!this.weissAmZug && f.farbe === WEISS))
         );
-    }
-
-    zugAusfuehren(zug) {
-        if (!this.istZugLegal(zug)) {
-            console.log("Zug ist nicht legal:", this.zugZuNotation(zug));
-            return false;
-        }
-
-        this.brett[zug.vonPos] = LEER;
-        this.brett[zug.nachPos] = zug.art * zug.farbe;
-
-        const figur = this.figurenListe.find(f => 
-            f.pos === zug.vonPos && !f.geschlagen && f.farbe === zug.farbe
-        );
-        
-        if (figur) {
-            figur.pos = zug.nachPos;
-            
-            if (zug.geschlagen) {
-                const geschlagen = this.figurenListe.find(f => 
-                    f.pos === zug.nachPos && !f.geschlagen && f.farbe === -zug.farbe
-                );
-                if (geschlagen) {
-                    geschlagen.geschlagen = true;
-                }
-            }
-        }
-
-        this.weissAmZug = !this.weissAmZug;
-        this.letzterZug = {...zug};
-        this.zugHistorie.push({...zug});
-        
-        this.pruefeSpielStatus();
-        
-        console.log("Zug ausgeführt:", this.zugZuNotation(zug));
-        return true;
-    }
-
-    kopiereZustand() {
-        return {
-            brett: [...this.brett],
-            figurenListe: JSON.parse(JSON.stringify(this.figurenListe)),
-            weissAmZug: this.weissAmZug,
-            bewertung: this.bewertung,
-            endmatt: this.endmatt,
-            patt: this.patt
-        };
-    }
-
-    zurueckZustand(zustand) {
-        this.brett = [...zustand.brett];
-        this.figurenListe = JSON.parse(JSON.stringify(zustand.figurenListe));
-        this.weissAmZug = zustand.weissAmZug;
-        this.bewertung = zustand.bewertung;
-        this.endmatt = zustand.endmatt;
-        this.patt = zustand.patt;
-    }
-
-    zugRueckgaengig() {
-        if (!this.letzterZug) return false;
-
-        const zug = this.letzterZug;
-        
-        this.brett[zug.vonPos] = zug.art * zug.farbe;
-        this.brett[zug.nachPos] = zug.geschlagen ? zug.geschlagen.art * zug.geschlagen.farbe : LEER;
-
-        const figur = this.figurenListe.find(f => 
-            f.pos === zug.nachPos && !f.geschlagen && f.farbe === zug.farbe
-        );
-        if (figur) {
-            figur.pos = zug.vonPos;
-        }
-
-        if (zug.geschlagen) {
-            const geschlagen = this.figurenListe.find(f => 
-                f.art === zug.geschlagen.art && f.farbe === zug.geschlagen.farbe && f.geschlagen
-            );
-            if (geschlagen) {
-                geschlagen.geschlagen = false;
-                geschlagen.pos = zug.nachPos;
-            }
-        }
-
-        this.weissAmZug = !this.weissAmZug;
-        this.letzterZug = null;
-        this.endmatt = false;
-        this.patt = false;
-        
-        return true;
-    }
-
-    /**
-     * VERBESSERTE KI-FUNKTIONEN
-     */
-
-    /**
-     * Optimierte Computerzug-Berechnung mit Timeout
-     */
-    computerZug() {
-        console.log("=== KI-ZUGBERECHNUNG GESTARTET ===");
-        const startZeit = performance.now();
-        this.berechnungsStartzeit = startZeit;
-        this.knotenZaehler = 0;
-        this.zugCounter = 0;
-        
-        const aktuelleFarbe = this.weissAmZug ? WEISS : SCHWARZ;
-        let alleZuege = this.generiereZuege(aktuelleFarbe);
-        
-        if (alleZuege.length === 0) {
-            console.log("Keine legalen Züge verfügbar");
-            return null;
-        }
-
-        // Einfache Eröffnungslogik
-        const eroeffnungsZug = this.pruefeEroeffnungsZug(alleZuege);
-        if (eroeffnungsZug) {
-            console.log("Eröffnungszug verwendet:", this.zugZuNotation(eroeffnungsZug));
-            return eroeffnungsZug;
-        }
-
-        // Sortiere Züge für bessere Alpha-Beta Performance
-        alleZuege = this.sortiereZuege(alleZuege, aktuelleFarbe);
-        
-        // Alpha-Beta-Suche
-        let besterZug = alleZuege[0]; // Fallback
-        let besteBewertung = aktuelleFarbe === WEISS ? -Infinity : Infinity;
-        
-        console.log(`Suche mit Tiefe ${this.kiEinstellungen.suchtiefe}`);
-        console.log(`Verfügbare Züge: ${alleZuege.length}`);
-        
-        for (const zug of alleZuege) {
-            // Timeout-Check
-            if (performance.now() - startZeit > this.kiEinstellungen.timeoutMs) {
-                console.log("Timeout - verwende besten bisherigen Zug");
-                break;
-            }
-            
-            this.zugCounter++;
-            
-            const zustandVorZug = this.kopiereZustand();
-            this.fuehreTempZugAus(zug);
-            
-            let bewertung;
-            if (aktuelleFarbe === WEISS) {
-                bewertung = this.alphaBeta(
-                    this.kiEinstellungen.suchtiefe - 1, 
-                    -Infinity, 
-                    Infinity, 
-                    false,
-                    startZeit
-                );
-            } else {
-                bewertung = this.alphaBeta(
-                    this.kiEinstellungen.suchtiefe - 1, 
-                    -Infinity, 
-                    Infinity, 
-                    true,
-                    startZeit
-                );
-            }
-            
-            this.zurueckZustand(zustandVorZug);
-            
-            console.log(`Zug ${this.zugCounter}: ${this.zugZuNotation(zug)} -> Bewertung: ${bewertung}`);
-            
-            if (aktuelleFarbe === WEISS) {
-                if (bewertung > besteBewertung) {
-                    besteBewertung = bewertung;
-                    besterZug = zug;
-                }
-            } else {
-                if (bewertung < besteBewertung) {
-                    besteBewertung = bewertung;
-                    besterZug = zug;
-                }
-            }
-        }
-        
-        const endZeit = performance.now();
-        console.log(`=== KI-ZUGBERECHNUNG ABGESCHLOSSEN ===`);
-        console.log(`Bester Zug: ${this.zugZuNotation(besterZug)}`);
-        console.log(`Bewertung: ${besteBewertung}`);
-        console.log(`Berechnete Knoten: ${this.knotenZaehler}`);
-        console.log(`Benötigte Zeit: ${(endZeit - startZeit).toFixed(0)}ms`);
-        
-        return besterZug;
-    }
-
-    /**
-     * Optimierte Alpha-Beta-Suche mit Timeout
-     */
-    alphaBeta(tiefe, alpha, beta, maximierend, startZeit) {
-        // Timeout-Check
-        if (performance.now() - startZeit > this.kiEinstellungen.timeoutMs) {
-            return maximierend ? -10000 : 10000; // Strafwert bei Timeout
-        }
-        
-        this.knotenZaehler++;
-        
-        // Blattknoten oder Endstellung
-        if (tiefe === 0) {
-            if (this.kiEinstellungen.quiescenceSearch) {
-                return this.quiescenceSearch(alpha, beta, maximierend, startZeit);
-            }
-            return this.bewerteStellung();
-        }
-        
-        const aktuelleFarbe = maximierend ? WEISS : SCHWARZ;
-        let zuege = this.generiereZuege(aktuelleFarbe);
-        
-        // Terminale Stellungen
-        if (zuege.length === 0) {
-            if (this.istKoenigImSchach(aktuelleFarbe)) {
-                return maximierend ? -20000 + tiefe : 20000 - tiefe;
-            }
-            return 0;
-        }
-        
-        // Sortiere Züge für bessere Cutoffs
-        zuege = this.sortiereZuege(zuege, aktuelleFarbe);
-        
-        if (maximierend) {
-            let maxBewertung = -Infinity;
-            
-            for (const zug of zuege) {
-                const zustandVorZug = this.kopiereZustand();
-                this.fuehreTempZugAus(zug);
-                
-                const bewertung = this.alphaBeta(tiefe - 1, alpha, beta, false, startZeit);
-                
-                this.zurueckZustand(zustandVorZug);
-                
-                maxBewertung = Math.max(maxBewertung, bewertung);
-                alpha = Math.max(alpha, bewertung);
-                
-                if (beta <= alpha) {
-                    break; // Beta-Cutoff
-                }
-            }
-            
-            return maxBewertung;
-        } else {
-            let minBewertung = Infinity;
-            
-            for (const zug of zuege) {
-                const zustandVorZug = this.kopiereZustand();
-                this.fuehreTempZugAus(zug);
-                
-                const bewertung = this.alphaBeta(tiefe - 1, alpha, beta, true, startZeit);
-                
-                this.zurueckZustand(zustandVorZug);
-                
-                minBewertung = Math.min(minBewertung, bewertung);
-                beta = Math.min(beta, bewertung);
-                
-                if (beta <= alpha) {
-                    break; // Alpha-Cutoff
-                }
-            }
-            
-            return minBewertung;
-        }
-    }
-
-    /**
-     * Quiescence Search für stabile Stellungen
-     */
-    quiescenceSearch(alpha, beta, maximierend, startZeit) {
-        const standbewertung = this.bewerteStellung();
-        
-        if (maximierend) {
-            if (standbewertung >= beta) return beta;
-            alpha = Math.max(alpha, standbewertung);
-        } else {
-            if (standbewertung <= alpha) return alpha;
-            beta = Math.min(beta, standbewertung);
-        }
-        
-        // Nur Schlagzüge generieren
-        const schlagZuege = this.generiereSchlagZuege(maximierend ? WEISS : SCHWARZ);
-        
-        if (schlagZuege.length === 0) {
-            return standbewertung;
-        }
-        
-        // Timeout-Check
-        if (performance.now() - startZeit > this.kiEinstellungen.timeoutMs) {
-            return standbewertung;
-        }
-        
-        if (maximierend) {
-            for (const zug of schlagZuege) {
-                const zustandVorZug = this.kopiereZustand();
-                this.fuehreTempZugAus(zug);
-                
-                const bewertung = this.quiescenceSearch(alpha, beta, false, startZeit);
-                
-                this.zurueckZustand(zustandVorZug);
-                
-                alpha = Math.max(alpha, bewertung);
-                if (beta <= alpha) break;
-            }
-            return alpha;
-        } else {
-            for (const zug of schlagZuege) {
-                const zustandVorZug = this.kopiereZustand();
-                this.fuehreTempZugAus(zug);
-                
-                const bewertung = this.quiescenceSearch(alpha, beta, true, startZeit);
-                
-                this.zurueckZustand(zustandVorZug);
-                
-                beta = Math.min(beta, bewertung);
-                if (beta <= alpha) break;
-            }
-            return beta;
-        }
-    }
-
-    /**
-     * Sortiert Züge für bessere Alpha-Beta Performance
-     */
-    sortiereZuege(zuege, farbe) {
-        return zuege.sort((a, b) => {
-            // Schlagzüge zuerst
-            const aSchlag = a.geschlagen ? this.bewertungsTabelle.material[a.geschlagen.art] : 0;
-            const bSchlag = b.geschlagen ? this.bewertungsTabelle.material[b.geschlagen.art] : 0;
-            
-            if (aSchlag !== bSchlag) {
-                return bSchlag - aSchlag; // Höhere Schlagwerte zuerst
-            }
-            
-            // Zentrumszüge bevorzugen
-            const aZentrum = this.berechneZentrumsWert(a.nachPos);
-            const bZentrum = this.berechneZentrumsWert(b.nachPos);
-            
-            return bZentrum - aZentrum;
-        });
-    }
-
-    /**
-     * Einfache Eröffnungslogik
-     */
-    pruefeEroeffnungsZug(zuege) {
-        const zugNummer = this.zugHistorie.length;
-        
-        // Nur in den ersten 8 Zügen Eröffnungslogik anwenden
-        if (zugNummer >= 8) return null;
-        
-        // Zentrumsbauern bevorzugen
-        const zentrumsZuege = zuege.filter(zug => 
-            zug.art === BAUER && 
-            (zug.nachPos === 44 || zug.nachPos === 45 || zug.nachPos === 54 || zug.nachPos === 55)
-        );
-        
-        if (zentrumsZuege.length > 0) {
-            return zentrumsZuege[0];
-        }
-        
-        // Springer entwickeln
-        const springerZuege = zuege.filter(zug => 
-            zug.art === SPRINGER && 
-            (zug.nachPos === 33 || zug.nachPos === 36 || zug.nachPos === 63 || zug.nachPos === 66)
-        );
-        
-        if (springerZuege.length > 0) {
-            return springerZuege[0];
-        }
-        
-        return null;
-    }
-
-    /**
-     * Berechnet Zentrumswert für eine Position
-     */
-    berechneZentrumsWert(position) {
-        const [reihe, linie] = this.positionZuKoordinaten(position);
-        const mitteReihe = 5.5; // Zwischen Reihe 5 und 6
-        const mitteLinie = 4.5; // Zwischen Linie 4 und 5
-        
-        const distanzReihe = Math.abs(reihe - mitteReihe);
-        const distanzLinie = Math.abs(linie - mitteLinie);
-        
-        // Je näher am Zentrum, desto höher der Wert
-        return 10 - (distanzReihe + distanzLinie);
-    }
-
-    generiereSchlagZuege(farbe) {
-        const alleZuege = this.generiereZuege(farbe);
-        return alleZuege.filter(zug => zug.geschlagen !== null);
-    }
-
-    /**
-     * Verbesserte Bewertungsfunktion
-     */
-    bewerteStellung() {
-        if (this.endmatt) {
-            return this.weissAmZug ? -20000 : 20000;
-        }
-        
-        if (this.patt) {
-            return 0;
-        }
-        
-        let material = 0;
-        let position = 0;
-        let entwicklungsVorteil = this.berechneEntwicklungsVorteil();
-        let zentrumsKontrolle = this.berechneZentrumsKontrolle();
-        let bauernStruktur = this.berechneBauernStruktur();
-        
-        // Material und Positionsbewertung
-        for (const figur of this.figurenListe) {
-            if (figur.geschlagen) continue;
-            
-            const figurWert = this.bewertungsTabelle.material[figur.art];
-            const posWert = this.berechnePositionsWert(figur);
-            
-            if (figur.farbe === WEISS) {
-                material += figurWert;
-                position += posWert;
-            } else {
-                material -= figurWert;
-                position -= posWert;
-            }
-        }
-        
-        // Verbesserte Gewichtung
-        const gesamtBewertung = 
-            material + 
-            position * 0.1 + 
-            entwicklungsVorteil * 2 + 
-            zentrumsKontrolle * 1.5 +
-            bauernStruktur * 0.5;
-            
-        this.bewertung = Math.round(gesamtBewertung);
-        return this.bewertung;
-    }
-
-    berechnePositionsWert(figur) {
-        if (!this.kiEinstellungen.erweiterteBewertung) {
-            return 0;
-        }
-        
-        const [brettReihe, brettLinie] = this.positionZuKoordinaten(figur.pos);
-        
-        let reihe = figur.farbe === WEISS ? brettReihe - 2 : 7 - (brettReihe - 2);
-        let linie = brettLinie - 1;
-        
-        reihe = Math.max(0, Math.min(7, reihe));
-        linie = Math.max(0, Math.min(7, linie));
-        
-        return this.bewertungsTabelle.position[figur.art][reihe][linie];
-    }
-
-    positionZuKoordinaten(position) {
-        const reihe = Math.floor(position / 10);
-        const linie = position % 10;
-        return [reihe, linie];
-    }
-
-    berechneEntwicklungsVorteil() {
-        let vorteil = 0;
-        
-        const entwickelteFiguren = this.figurenListe.filter(figur => 
-            !figur.geschlagen && 
-            (figur.art === SPRINGER || figur.art === LAEUFER) &&
-            this.istFigurEntwickelt(figur)
-        );
-        
-        for (const figur of entwickelteFiguren) {
-            vorteil += figur.farbe === WEISS ? 20 : -20;
-        }
-        
-        return vorteil;
-    }
-
-    istFigurEntwickelt(figur) {
-        const startReihe = figur.farbe === WEISS ? 2 : 9;
-        return Math.floor(figur.pos / 10) !== startReihe;
-    }
-
-    berechneZentrumsKontrolle() {
-        const zentrumsFelder = [44, 45, 54, 55];
-        let kontrolle = 0;
-        
-        for (const feld of zentrumsFelder) {
-            if (this.brett[feld] !== LEER) {
-                const figur = this.figurenListe.find(f => f.pos === feld && !f.geschlagen);
-                if (figur) {
-                    // Höhere Werte für stärkere Figuren
-                    const figurWert = this.bewertungsTabelle.material[figur.art] / 100;
-                    kontrolle += figur.farbe === WEISS ? figurWert * 5 : -figurWert * 5;
-                }
-            }
-        }
-        
-        return kontrolle;
-    }
-
-    /**
-     * Einfache Bauernstruktur-Bewertung
-     */
-    berechneBauernStruktur() {
-        let bewertung = 0;
-        
-        // Doppelbauern bestrafen
-        const bauernProLinie = {};
-
-        for (const figur of this.figurenListe) {
-            if (!figur.geschlagen && figur.art === BAUER) {
-                const linie = figur.pos % 10;
-                const key = `${linie}-${figur.farbe}`;
-                bauernProLinie[key] = (bauernProLinie[key] || 0) + 1;
-            }
-        }
-
-        for (const key in bauernProLinie) {
-            if (bauernProLinie[key] > 1) {
-                const farbe = key.includes(WEISS) ? WEISS : SCHWARZ;
-                bewertung += farbe === WEISS ? -20 : 20;
-            }
-        }
-        
-        return bewertung;
-    }
-
-    zugZuNotation(zug) {
-        const von = this.positionZuNotation(zug.vonPos);
-        const nach = this.positionZuNotation(zug.nachPos);
-        return `${von}${nach}`;
-    }
-
-    fuehreTempZugAus(zug) {
-        this.brett[zug.vonPos] = LEER;
-        this.brett[zug.nachPos] = zug.art * zug.farbe;
-        
-        const figur = this.figurenListe.find(f => 
-            f.pos === zug.vonPos && !f.geschlagen && f.farbe === zug.farbe
-        );
-        
-        if (figur) {
-            figur.pos = zug.nachPos;
-            
-            if (zug.geschlagen) {
-                const geschlagen = this.figurenListe.find(f => 
-                    f.pos === zug.nachPos && !f.geschlagen && f.farbe === -zug.farbe
-                );
-                if (geschlagen) {
-                    geschlagen.geschlagen = true;
-                }
-            }
-        }
-    }
-
-    // Bestehende Methoden für Spielregeln
-    istSchachmatt(farbe) {
-        if (this.istKoenigImSchach(farbe)) {
-            const legaleZuege = this.generiereZuege(farbe);
-            return legaleZuege.length === 0;
-        }
-        return false;
-    }
-
-    istPatt(farbe) {
-        if (!this.istKoenigImSchach(farbe)) {
-            const legaleZuege = this.generiereZuege(farbe);
-            return legaleZuege.length === 0;
-        }
-        return false;
     }
 
     istKoenigImSchach(farbe) {
@@ -974,15 +477,105 @@ class ChesstegEngine {
         for (const figur of this.figurenListe) {
             if (figur.geschlagen || figur.farbe !== gegnerFarbe) continue;
             
-            const angriffsZuege = this.generiereFigurenZuege(figur);
-
-            for (const zug of angriffsZuege) {
+            const zuege = this.generiereFigurenZuegeOhneSchachpruefung(figur);
+            for (const zug of zuege) {
                 if (zug.nachPos === koenig.pos) {
                     return true;
                 }
             }
         }
         
+        return false;
+    }
+
+    generiereFigurenZuegeOhneSchachpruefung(figur) {
+        switch (figur.art) {
+            case TURM: return this.generiereTurmZuege(figur);
+            case LAEUFER: return this.generiereLaeuferZuege(figur);
+            case DAME: return this.generiereDameZuege(figur);
+            case SPRINGER: return this.generiereSpringerZuege(figur);
+            case BAUER: return this.generiereBauernZuegeOhneEnPassant(figur);
+            case KOENIG: 
+                const zuege = [];
+                const koenigZuege = [1, -1, 10, -10, 9, 11, -9, -11];
+                for (const d of koenigZuege) {
+                    const feld = figur.pos + d;
+                    if (this.brett[feld] !== DUMMY) {
+                        if (this.brett[feld] === LEER || this.istGegner(figur.farbe, this.brett[feld])) {
+                            zuege.push({ vonPos: figur.pos, nachPos: feld });
+                        }
+                    }
+                }
+                return zuege;
+            default: return [];
+        }
+    }
+
+    generiereBauernZuegeOhneEnPassant(figur) {
+        const zuege = [];
+        const vorwaerts = figur.farbe === WEISS ? 10 : -10;
+        
+        // Schlagzüge
+        for (const seite of [vorwaerts + 1, vorwaerts - 1]) {
+            const feld = figur.pos + seite;
+            if (this.brett[feld] !== DUMMY && this.brett[feld] !== LEER) {
+                if (this.istGegner(figur.farbe, this.brett[feld])) {
+                    zuege.push({ vonPos: figur.pos, nachPos: feld });
+                }
+            }
+        }
+        return zuege;
+    }
+
+    istZugLegal(zug) {
+        const originalBrett = [...this.brett];
+        const originalFigurenListe = JSON.parse(JSON.stringify(this.figurenListe));
+
+        this.brett[zug.vonPos] = LEER;
+        this.brett[zug.nachPos] = zug.art * zug.farbe;
+        
+        const ziehendeFigur = this.figurenListe.find(f => 
+            f.pos === zug.vonPos && !f.geschlagen && f.farbe === zug.farbe
+        );
+
+        if (ziehendeFigur) {
+            ziehendeFigur.pos = zug.nachPos;
+            
+            if (zug.geschlagen) {
+                const geschlageneFigurTemp = this.figurenListe.find(f => 
+                    f.pos === zug.nachPos && !f.geschlagen && f.farbe === -zug.farbe
+                );
+                if (geschlageneFigurTemp) {
+                    geschlageneFigurTemp.geschlagen = true;
+                }
+            }
+        
+            const imSchach = this.istKoenigImSchach(zug.farbe);
+        
+            this.brett = originalBrett;
+            this.figurenListe = JSON.parse(JSON.stringify(originalFigurenListe));
+            
+            return !imSchach;
+        }
+        
+        this.brett = originalBrett;
+        this.figurenListe = JSON.parse(JSON.stringify(originalFigurenListe));
+        return false;
+    }
+
+    istSchachmatt(farbe) {
+        if (this.istKoenigImSchach(farbe)) {
+            const legaleZuege = this.generiereZuege(farbe);
+            return legaleZuege.length === 0;
+        }
+        return false;
+    }
+
+    istPatt(farbe) {
+        if (!this.istKoenigImSchach(farbe)) {
+            const legaleZuege = this.generiereZuege(farbe);
+            return legaleZuege.length === 0;
+        }
         return false;
     }
 
@@ -1001,6 +594,953 @@ class ChesstegEngine {
         }
     }
 
+    erstelleZustandSnapshot() {
+        return {
+            brett: [...this.brett],
+            figurenListe: JSON.parse(JSON.stringify(this.figurenListe)),
+            weissAmZug: this.weissAmZug,
+            bewertung: this.bewertung,
+            endmatt: this.endmatt,
+            patt: this.patt,
+            rochadeRechte: {...this.rochadeRechte},
+            enPassantTarget: this.enPassantTarget,
+            halbzugCounter: this.halbzugCounter,
+            vollzugCounter: this.vollzugCounter,
+            zugCounter: this.zugCounter
+        };
+    }
+
+    wiederherstelleZustand(snapshot) {
+        this.brett = [...snapshot.brett];
+        this.figurenListe = JSON.parse(JSON.stringify(snapshot.figurenListe));
+        this.weissAmZug = snapshot.weissAmZug;
+        this.bewertung = snapshot.bewertung;
+        this.endmatt = snapshot.endmatt;
+        this.patt = snapshot.patt;
+        this.rochadeRechte = {...snapshot.rochadeRechte};
+        this.enPassantTarget = snapshot.enPassantTarget;
+        this.halbzugCounter = snapshot.halbzugCounter;
+        this.vollzugCounter = snapshot.vollzugCounter;
+        this.zugCounter = snapshot.zugCounter;
+    }
+
+    zugAusfuehren(zug) {
+        if (!this.istZugLegal(zug)) {
+            console.log("Zug ist nicht legal:", this.zugZuNotation(zug));
+            return false;
+        }
+
+        const zustandVorZug = this.erstelleZustandSnapshot();
+
+        if (this.historieIndex < this.zugHistorie.length - 1) {
+            this.zugHistorie = this.zugHistorie.slice(0, this.historieIndex + 1);
+        }
+
+        this.brett[zug.vonPos] = LEER;
+        const endgueltigeFigurArt = zug.umwandlungsFigur || zug.art;
+        this.brett[zug.nachPos] = endgueltigeFigurArt * zug.farbe;
+
+        const figur = this.figurenListe.find(f => 
+            f.pos === zug.vonPos && !f.geschlagen && f.farbe === zug.farbe
+        );
+        
+        if (figur) {
+            figur.pos = zug.nachPos;
+            
+            if (zug.enPassant && zug.geschlagen) {
+                const geschlagen = this.figurenListe.find(f => 
+                    f.pos === zug.geschlagen.pos && !f.geschlagen
+                );
+                if (geschlagen) {
+                    geschlagen.geschlagen = true;
+                    this.brett[zug.geschlagen.pos] = LEER;
+                }
+            }
+            else if (zug.geschlagen) {
+                const geschlagen = this.figurenListe.find(f => 
+                    f.pos === zug.nachPos && !f.geschlagen && f.farbe === -zug.farbe
+                );
+                if (geschlagen) {
+                    geschlagen.geschlagen = true;
+                }
+            }
+
+            if (zug.umwandlungsFigur) {
+                figur.art = zug.umwandlungsFigur;
+            }
+        }
+
+        if (zug.rochade) {
+            this.fuehreRochadeAus(zug.farbe, zug.rochade);
+        }
+
+        this.aktualisiereRochadeRechte(zug);
+
+        this.enPassantTarget = null;
+        if (zug.istBauernDoppelschritt) {
+            this.enPassantTarget = zug.farbe === WEISS ? zug.nachPos - 10 : zug.nachPos + 10;
+        }
+
+        if (zug.art === BAUER || zug.geschlagen) {
+            this.halbzugCounter = 0;
+        } else {
+            this.halbzugCounter++;
+        }
+
+        if (zug.farbe === SCHWARZ) {
+            this.vollzugCounter++;
+        }
+
+        this.weissAmZug = !this.weissAmZug;
+        this.zugCounter++;
+
+        const erweiterterZug = {
+            ...zug,
+            zustandVorZug: zustandVorZug,
+            zugNummer: this.zugCounter,
+            vollzugNummer: this.vollzugCounter
+        };
+        
+        this.letzterZug = erweiterterZug;
+        this.zugHistorie.push(erweiterterZug);
+        this.historieIndex = this.zugHistorie.length - 1;
+
+        if (this.zugHistorie.length > 50) {
+            this.zugHistorie.shift();
+            this.historieIndex--;
+        }
+
+        this.pruefeSpielStatus();
+        
+        console.log("Zug ausgeführt:", this.zugZuNotation(zug), "Zug-Nr:", this.zugCounter);
+        if (zug.rochade) console.log("♜ Rochade ausgeführt:", zug.rochade);
+        if (zug.enPassant) console.log("♟ En Passant ausgeführt");
+        if (zug.umwandlungsFigur) console.log("👑 Bauernumwandlung zu:", this.getFigurName(zug.umwandlungsFigur * zug.farbe));
+        
+        return true;
+    }
+
+    zugZuruecknehmen() {
+        if (this.zugHistorie.length === 0 || this.historieIndex < 0) {
+            console.log("❌ Keine Züge zum Zurücknehmen verfügbar");
+            return false;
+        }
+
+        const letzterZug = this.zugHistorie[this.historieIndex];
+        console.log("↩️ Nehme Zug zurück:", this.zugZuNotation(letzterZug));
+
+        this.wiederherstelleZustand(letzterZug.zustandVorZug);
+        
+        this.historieIndex--;
+        
+        this.pruefeSpielStatus();
+        
+        console.log("✅ Zug erfolgreich zurückgenommen. Verbleibende Züge:", this.historieIndex + 1);
+        return true;
+    }
+
+    zugWiederherstellen() {
+        if (this.historieIndex >= this.zugHistorie.length - 1) {
+            console.log("❌ Keine Züge zum Wiederherstellen verfügbar");
+            return false;
+        }
+
+        this.historieIndex++;
+        const naechsterZug = this.zugHistorie[this.historieIndex];
+        
+        this.wiederherstelleZustand(naechsterZug.zustandVorZug);
+        
+        this.brett[naechsterZug.vonPos] = LEER;
+        const endgueltigeFigurArt = naechsterZug.umwandlungsFigur || naechsterZug.art;
+        this.brett[naechsterZug.nachPos] = endgueltigeFigurArt * naechsterZug.farbe;
+
+        const figur = this.figurenListe.find(f => 
+            f.pos === naechsterZug.vonPos && !f.geschlagen && f.farbe === naechsterZug.farbe
+        );
+        
+        if (figur) {
+            figur.pos = naechsterZug.nachPos;
+            
+            if (naechsterZug.umwandlungsFigur) {
+                figur.art = naechsterZug.umwandlungsFigur;
+            }
+        }
+
+        console.log("↪️ Zug wiederhergestellt:", this.zugZuNotation(naechsterZug));
+        return true;
+    }
+
+    istRuecknahmeMoeglich() {
+        return this.historieIndex >= 0;
+    }
+
+    istWiederherstellungMoeglich() {
+        return this.historieIndex < this.zugHistorie.length - 1;
+    }
+
+    getZugInfo() {
+        return {
+            aktuelleZugNummer: this.zugCounter,
+            historieLaenge: this.zugHistorie.length,
+            historieIndex: this.historieIndex,
+            kannZurueck: this.istRuecknahmeMoeglich(),
+            kannVorwaerts: this.istWiederherstellungMoeglich(),
+            vollzugNummer: this.vollzugCounter
+        };
+    }
+
+    fuehreRochadeAus(farbe, seite) {
+        const istWeiss = farbe === WEISS;
+        const startReihe = istWeiss ? 2 : 9;
+        
+        let turmStart, turmZiel;
+        
+        if (seite === 'kurz') {
+            turmStart = startReihe * 10 + 8;
+            turmZiel = startReihe * 10 + 6;
+        } else {
+            turmStart = startReihe * 10 + 1;
+            turmZiel = startReihe * 10 + 4;
+        }
+
+        const turm = this.figurenListe.find(f => 
+            f.art === TURM && f.farbe === farbe && f.pos === turmStart && !f.geschlagen
+        );
+        if (turm) {
+            this.brett[turmStart] = LEER;
+            this.brett[turmZiel] = TURM * farbe;
+            turm.pos = turmZiel;
+        }
+    }
+
+    aktualisiereRochadeRechte(zug) {
+        if (zug.art === KOENIG) {
+            if (zug.farbe === WEISS) {
+                this.rochadeRechte.weissKurz = false;
+                this.rochadeRechte.weissLang = false;
+            } else {
+                this.rochadeRechte.schwarzKurz = false;
+                this.rochadeRechte.schwarzLang = false;
+            }
+        }
+        
+        if (zug.art === TURM) {
+            if (zug.farbe === WEISS) {
+                if (zug.vonPos === 21) this.rochadeRechte.weissLang = false;
+                if (zug.vonPos === 28) this.rochadeRechte.weissKurz = false;
+            } else {
+                if (zug.vonPos === 91) this.rochadeRechte.schwarzLang = false;
+                if (zug.vonPos === 98) this.rochadeRechte.schwarzKurz = false;
+            }
+        }
+    }
+
+    // PHASE 3.1: ERWEITERTE BEWERTUNGSFUNKTION
+    bewerteStellung() {
+        if (!this.kiEinstellungen.erweiterteBewertung) {
+            return this.einfacheMaterialbewertung();
+        }
+        
+        let bewertung = 0;
+        
+        // 1. MATERIALBEWERTUNG (Grundlage)
+        bewertung += this.einfacheMaterialbewertung();
+        
+        // 2. POSITIONSBEWERTUNG
+        bewertung += this.bewertePositionen();
+        
+        // 3. FIGURENSPEZIFISCHE BEWERTUNG
+        bewertung += this.bewerteFigurenSpezifisch();
+        
+        // 4. BAUERNSTRUKTUR
+        bewertung += this.bewerteBauernStruktur();
+        
+        // 5. KÖNIGSSICHERHEIT
+        bewertung += this.bewerteKoenigsSicherheit();
+        
+        this.bewertung = bewertung;
+        return bewertung;
+    }
+
+    einfacheMaterialbewertung() {
+        let material = 0;
+        for (const figur of this.figurenListe) {
+            if (figur.geschlagen) continue;
+            
+            const figurWert = this.getFigurWert(figur.art);
+            material += figur.farbe === WEISS ? figurWert : -figurWert;
+        }
+        return material;
+    }
+
+    // 2. POSITIONSBEWERTUNG
+    bewertePositionen() {
+        let positionsBewertung = 0;
+        
+        // Zentrumskontrolle (Felder d4,d5,e4,e5)
+        const zentrumsFelder = [44, 45, 54, 55];
+        for (const feld of zentrumsFelder) {
+            if (this.brett[feld] !== LEER && this.brett[feld] !== DUMMY) {
+                const figurWert = this.brett[feld];
+                if (figurWert > 0) positionsBewertung += 15;
+                else positionsBewertung -= 15;
+            }
+        }
+        
+        // Entwicklungsvorteil
+        positionsBewertung += this.bewerteEntwicklung();
+        
+        // Raumvorteil
+        positionsBewertung += this.bewerteRaumvorteil();
+        
+        return positionsBewertung;
+    }
+
+    bewerteEntwicklung() {
+        let entwicklungsBonus = 0;
+        
+        const weissGrundreihe = [21, 22, 23, 24, 25, 26, 27, 28];
+        const schwarzGrundreihe = [91, 92, 93, 94, 95, 96, 97, 98];
+        
+        for (const figur of this.figurenListe) {
+            if (figur.geschlagen || figur.art === BAUER || figur.art === KOENIG) continue;
+            
+            if (figur.farbe === WEISS && !weissGrundreihe.includes(figur.pos)) {
+                entwicklungsBonus += 10;
+            } else if (figur.farbe === SCHWARZ && !schwarzGrundreihe.includes(figur.pos)) {
+                entwicklungsBonus -= 10;
+            }
+        }
+        
+        return entwicklungsBonus;
+    }
+
+    bewerteRaumvorteil() {
+        let raumBewertung = 0;
+        
+        for (const figur of this.figurenListe) {
+            if (figur.geschlagen || figur.art === KOENIG) continue;
+            
+            const reihe = Math.floor(figur.pos / 10);
+            if (figur.farbe === WEISS && reihe >= 6) {
+                raumBewertung += 5;
+            } else if (figur.farbe === SCHWARZ && reihe <= 5) {
+                raumBewertung -= 5;
+            }
+        }
+        
+        return raumBewertung;
+    }
+
+    // 3. FIGURENSPEZIFISCHE BEWERTUNG
+    bewerteFigurenSpezifisch() {
+        let figurenBewertung = 0;
+        
+        for (const figur of this.figurenListe) {
+            if (figur.geschlagen) continue;
+            
+            const multiplikator = figur.farbe === WEISS ? 1 : -1;
+            
+            switch (figur.art) {
+                case LAEUFER:
+                    figurenBewertung += this.bewerteLaeufer(figur) * multiplikator;
+                    break;
+                case SPRINGER:
+                    figurenBewertung += this.bewerteSpringer(figur) * multiplikator;
+                    break;
+                case TURM:
+                    figurenBewertung += this.bewerteTurm(figur) * multiplikator;
+                    break;
+                case BAUER:
+                    figurenBewertung += this.bewerteBauer(figur) * multiplikator;
+                    break;
+            }
+        }
+        
+        // Läuferpaar-Bonus
+        if (this.hatLaeuferpaar(WEISS)) figurenBewertung += 30;
+        if (this.hatLaeuferpaar(SCHWARZ)) figurenBewertung -= 30;
+        
+        return figurenBewertung;
+    }
+
+    bewerteLaeufer(figur) {
+        let bewertung = 0;
+        
+        const position = figur.pos;
+        const istZentrumsnahe = [44, 45, 54, 55, 33, 36, 63, 66].includes(position);
+        if (istZentrumsnahe) bewertung += 10;
+        
+        return bewertung;
+    }
+
+    bewerteSpringer(figur) {
+        let bewertung = 0;
+        
+        const position = figur.pos;
+        const zentrumsFelder = [44, 45, 54, 55, 33, 34, 35, 36, 43, 46, 53, 56, 63, 64, 65, 66];
+        if (zentrumsFelder.includes(position)) {
+            bewertung += 15;
+        }
+        
+        return bewertung;
+    }
+
+    bewerteTurm(figur) {
+        let bewertung = 0;
+        
+        if (this.istOffeneLinie(figur.pos)) {
+            bewertung += 20;
+        }
+        
+        return bewertung;
+    }
+
+    bewerteBauer(figur) {
+        let bewertung = 0;
+        
+        const position = figur.pos;
+        const zentrumsFelder = [44, 45, 54, 55];
+        if (zentrumsFelder.includes(position)) {
+            bewertung += 10;
+        }
+        
+        const reihe = Math.floor(position / 10);
+        if (figur.farbe === WEISS) {
+            if (reihe >= 6) bewertung += 5;
+            if (reihe >= 7) bewertung += 10;
+        } else {
+            if (reihe <= 5) bewertung += 5;
+            if (reihe <= 4) bewertung += 10;
+        }
+        
+        return bewertung;
+    }
+
+    istOffeneLinie(position) {
+        const datei = position % 10;
+        
+        for (let reihe = 2; reihe <= 9; reihe++) {
+            const feld = reihe * 10 + datei;
+            const figurWert = this.brett[feld];
+            if (Math.abs(figurWert) === BAUER) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    hatLaeuferpaar(farbe) {
+        let laeuferCount = 0;
+        for (const figur of this.figurenListe) {
+            if (!figur.geschlagen && figur.farbe === farbe && figur.art === LAEUFER) {
+                laeuferCount++;
+            }
+        }
+        return laeuferCount >= 2;
+    }
+
+    // 4. BAUERNSTRUKTUR
+    bewerteBauernStruktur() {
+        let bauernBewertung = 0;
+        
+        bauernBewertung += this.bewerteDoppelbauern();
+        bauernBewertung += this.bewerteIsolanis();
+        bauernBewertung += this.bewerteFreibauern();
+        
+        return bauernBewertung;
+    }
+
+    bewerteDoppelbauern() {
+        let strafe = 0;
+        
+        for (let datei = 1; datei <= 8; datei++) {
+            let weissBauern = 0;
+            let schwarzBauern = 0;
+            
+            for (let reihe = 2; reihe <= 9; reihe++) {
+                const feld = reihe * 10 + datei;
+                const figurWert = this.brett[feld];
+                
+                if (figurWert === BAUER) weissBauern++;
+                else if (figurWert === -BAUER) schwarzBauern++;
+            }
+            
+            if (weissBauern > 1) strafe -= 10 * (weissBauern - 1);
+            if (schwarzBauern > 1) strafe += 10 * (schwarzBauern - 1);
+        }
+        
+        return strafe;
+    }
+
+    bewerteIsolanis() {
+        let strafe = 0;
+        
+        for (const figur of this.figurenListe) {
+            if (figur.geschlagen || figur.art !== BAUER) continue;
+            
+            const datei = figur.pos % 10;
+            const hatNachbarBauer = this.hatNachbarBauer(datei, figur.farbe);
+            
+            if (!hatNachbarBauer) {
+                if (figur.farbe === WEISS) strafe -= 15;
+                else strafe += 15;
+            }
+        }
+        
+        return strafe;
+    }
+
+    hatNachbarBauer(datei, farbe) {
+        const nachbarDateien = [datei - 1, datei + 1].filter(d => d >= 1 && d <= 8);
+        
+        for (const nd of nachbarDateien) {
+            for (let reihe = 2; reihe <= 9; reihe++) {
+                const feld = reihe * 10 + nd;
+                if (this.brett[feld] === BAUER * farbe) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    bewerteFreibauern() {
+        let bonus = 0;
+        
+        for (const figur of this.figurenListe) {
+            if (figur.geschlagen || figur.art !== BAUER) continue;
+            
+            if (this.istFreibauer(figur)) {
+                if (figur.farbe === WEISS) bonus += 20;
+                else bonus -= 20;
+            }
+        }
+        
+        return bonus;
+    }
+
+    istFreibauer(figur) {
+        const datei = figur.pos % 10;
+        const vorwaerts = figur.farbe === WEISS ? 10 : -10;
+        
+        for (let reiheOffset = 1; reiheOffset <= 8; reiheOffset++) {
+            const feldVor = figur.pos + vorwaerts * reiheOffset;
+            if (this.brett[feldVor] === DUMMY) break;
+            
+            if (Math.abs(this.brett[feldVor]) === BAUER && 
+                this.brett[feldVor] * figur.farbe < 0) {
+                return false;
+            }
+            
+            for (const seite of [-1, 1]) {
+                const feldDiag = feldVor + seite;
+                if (this.brett[feldDiag] !== DUMMY && 
+                    Math.abs(this.brett[feldDiag]) === BAUER &&
+                    this.brett[feldDiag] * figur.farbe < 0) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    // 5. KÖNIGSSICHERHEIT
+    bewerteKoenigsSicherheit() {
+        let sicherheitsBewertung = 0;
+        
+        sicherheitsBewertung += this.bewerteBauernschild();
+        sicherheitsBewertung += this.bewerteKoenigsAngriff();
+        
+        return sicherheitsBewertung;
+    }
+
+    bewerteBauernschild() {
+        let bewertung = 0;
+        
+        for (const farbe of [WEISS, SCHWARZ]) {
+            const koenig = this.figurenListe.find(f => 
+                !f.geschlagen && f.art === KOENIG && f.farbe === farbe
+            );
+            
+            if (!koenig) continue;
+            
+            const multiplikator = farbe === WEISS ? 1 : -1;
+            const bauernschildFelder = this.getBauernschildFelder(koenig.pos, farbe);
+            let bauernAnzahl = 0;
+            
+            for (const feld of bauernschildFelder) {
+                if (this.brett[feld] === BAUER * farbe) {
+                    bauernAnzahl++;
+                }
+            }
+            
+            bewertung += bauernAnzahl * 5 * multiplikator;
+        }
+        
+        return bewertung;
+    }
+
+    getBauernschildFelder(koenigPos, farbe) {
+        const richtung = farbe === WEISS ? -10 : 10;
+        const felder = [];
+        
+        for (const seite of [-1, 1]) {
+            felder.push(koenigPos + richtung + seite);
+        }
+        
+        return felder.filter(feld => this.brett[feld] !== DUMMY);
+    }
+
+    bewerteKoenigsAngriff() {
+        let bewertung = 0;
+        
+        for (const farbe of [WEISS, SCHWARZ]) {
+            const koenig = this.figurenListe.find(f => 
+                !f.geschlagen && f.art === KOENIG && f.farbe === farbe
+            );
+            
+            if (!koenig) continue;
+            
+            const gegnerFarbe = -farbe;
+            const multiplikator = farbe === WEISS ? -1 : 1;
+            
+            let angreifer = 0;
+            for (const figur of this.figurenListe) {
+                if (figur.geschlagen || figur.farbe !== gegnerFarbe) continue;
+                
+                if (this.istFigurAngriffsnah(figur, koenig.pos)) {
+                    angreifer++;
+                }
+            }
+            
+            bewertung += angreifer * 10 * multiplikator;
+        }
+        
+        return bewertung;
+    }
+
+    istFigurAngriffsnah(figur, koenigPos) {
+        const abstand = Math.abs(figur.pos - koenigPos);
+        return abstand <= 30;
+    }
+
+    // PHASE 3.2: OPTIMIERTER SUCHALGORITHMUS
+    
+    /**
+     * OPTIMIERTE ALPHA-BETA-SUCHE MIT MOVE ORDERING
+     */
+    alphaBetaSuchen(tiefe, alpha, beta, maximierenderSpieler) {
+        this.knotenZaehler++;
+        
+        // Timeout-Prüfung
+        if (Date.now() - this.berechnungsStartzeit > this.kiEinstellungen.timeoutMs) {
+            return 0;
+        }
+        
+        // Transposition Table Lookup
+        const hash = this.berechneZobristHash();
+        const ttEintrag = this.transpositionTable.get(hash);
+        if (ttEintrag && ttEintrag.tiefe >= tiefe) {
+            if (ttEintrag.typ === 'EXACT') return ttEintrag.bewertung;
+            if (ttEintrag.typ === 'LOWER' && ttEintrag.bewertung >= beta) return beta;
+            if (ttEintrag.typ === 'UPPER' && ttEintrag.bewertung <= alpha) return alpha;
+        }
+        
+        // Blattknoten oder Endstellung
+        if (tiefe === 0) {
+            return this.kiEinstellungen.useQuiescenceSearch ? 
+                   this.quiescenceSearch(alpha, beta, maximierenderSpieler) : 
+                   this.bewerteStellung();
+        }
+        
+        const aktuelleFarbe = maximierenderSpieler ? (this.weissAmZug ? WEISS : SCHWARZ) : 
+                                                    (this.weissAmZug ? SCHWARZ : WEISS);
+        const zuege = this.generiereZuege(aktuelleFarbe);
+        
+        if (zuege.length === 0) {
+            if (this.istKoenigImSchach(aktuelleFarbe)) {
+                return maximierenderSpieler ? -20000 : 20000;
+            }
+            return 0;
+        }
+        
+        // MOVE ORDERING: Sortiere Züge für bessere Cutoffs
+        const geordneteZuege = this.kiEinstellungen.useMoveOrdering ? 
+                              this.ordneZuege(zuege, hash) : zuege;
+        
+        let besterWert = maximierenderSpieler ? -Infinity : Infinity;
+        let besterZug = null;
+        let ttTyp = 'UPPER';
+        
+        for (const zug of geordneteZuege) {
+            const zustandVorZug = this.erstelleZustandSnapshot();
+            this.zugAusfuehren(zug);
+            
+            const wert = this.alphaBetaSuchen(tiefe - 1, alpha, beta, !maximierenderSpieler);
+            
+            this.wiederherstelleZustand(zustandVorZug);
+            
+            if (maximierenderSpieler) {
+                if (wert > besterWert) {
+                    besterWert = wert;
+                    besterZug = zug;
+                }
+                alpha = Math.max(alpha, besterWert);
+            } else {
+                if (wert < besterWert) {
+                    besterWert = wert;
+                    besterZug = zug;
+                }
+                beta = Math.min(beta, besterWert);
+            }
+            
+            // Alpha-Beta Cutoff
+            if (alpha >= beta) {
+                this.historyHeuristic[zug.vonPos][zug.nachPos] += tiefe * tiefe;
+                break;
+            }
+        }
+        
+        // Transposition Table Store
+        let typ = 'EXACT';
+        if (besterWert <= alpha) typ = 'UPPER';
+        else if (besterWert >= beta) typ = 'LOWER';
+        
+        this.transpositionTable.set(hash, {
+            bewertung: besterWert,
+            tiefe: tiefe,
+            typ: typ,
+            besterZug: besterZug
+        });
+        
+        return besterWert;
+    }
+
+    /**
+     * MOVE ORDERING: Sortiert Züge für bessere Alpha-Beta Performance
+     */
+    ordneZuege(zuege, hash) {
+        const bewerteteZuege = [];
+        
+        // TT Move zuerst
+        const ttEintrag = this.transpositionTable.get(hash);
+        if (ttEintrag && ttEintrag.besterZug) {
+            const ttMoveIndex = zuege.findIndex(zug => 
+                zug.vonPos === ttEintrag.besterZug.vonPos && 
+                zug.nachPos === ttEintrag.besterZug.nachPos
+            );
+            if (ttMoveIndex !== -1) {
+                bewerteteZuege.push({ zug: zuege[ttMoveIndex], score: 10000 });
+                zuege.splice(ttMoveIndex, 1);
+            }
+        }
+        
+        for (const zug of zuege) {
+            let score = 0;
+            
+            // MVV-LVA: Most Valuable Victim - Least Valuable Attacker
+            if (zug.geschlagen) {
+                const opferWert = this.getFigurWert(zug.geschlagen.art);
+                const angreiferWert = this.getFigurWert(zug.art);
+                score += 1000 + opferWert - angreiferWert;
+            }
+            
+            // Schachgebote priorisieren
+            if (this.istSchachGebot(zug)) {
+                score += 500;
+            }
+            
+            // History Heuristic
+            score += this.historyHeuristic[zug.vonPos][zug.nachPos];
+            
+            // Bauernumwandlung priorisieren
+            if (zug.umwandlungsFigur) {
+                score += this.getFigurWert(zug.umwandlungsFigur) - this.getFigurWert(BAUER);
+            }
+            
+            bewerteteZuege.push({ zug, score });
+        }
+        
+        // Absteigend nach Score sortieren
+        bewerteteZuege.sort((a, b) => b.score - a.score);
+        return bewerteteZuege.map(item => item.zug);
+    }
+
+    /**
+     * QUIESCENCE SEARCH: Vermeidet Horizonteffekt
+     */
+    quiescenceSearch(alpha, beta, maximierenderSpieler) {
+        this.knotenZaehler++;
+        
+        const standbewertung = this.bewerteStellung();
+        
+        if (maximierenderSpieler) {
+            if (standbewertung >= beta) return beta;
+            alpha = Math.max(alpha, standbewertung);
+        } else {
+            if (standbewertung <= alpha) return alpha;
+            beta = Math.min(beta, standbewertung);
+        }
+        
+        // Nur Schlagzüge in Quiescence Search
+        const aktuelleFarbe = maximierenderSpieler ? (this.weissAmZug ? WEISS : SCHWARZ) : 
+                                                    (this.weissAmZug ? SCHWARZ : WEISS);
+        const schlagZuege = this.generiereZuege(aktuelleFarbe).filter(zug => zug.geschlagen);
+        
+        const geordneteSchlagZuege = this.ordneZuege(schlagZuege, this.berechneZobristHash());
+        
+        for (const zug of geordneteSchlagZuege) {
+            const zustandVorZug = this.erstelleZustandSnapshot();
+            this.zugAusfuehren(zug);
+            
+            const wert = this.quiescenceSearch(alpha, beta, !maximierenderSpieler);
+            
+            this.wiederherstelleZustand(zustandVorZug);
+            
+            if (maximierenderSpieler) {
+                if (wert >= beta) return beta;
+                alpha = Math.max(alpha, wert);
+            } else {
+                if (wert <= alpha) return alpha;
+                beta = Math.min(beta, wert);
+            }
+        }
+        
+        return standbewertung;
+    }
+
+    istSchachGebot(zug) {
+        const zustandVorZug = this.erstelleZustandSnapshot();
+        this.zugAusfuehren(zug);
+        
+        const imSchach = this.istKoenigImSchach(-zug.farbe);
+        
+        this.wiederherstelleZustand(zustandVorZug);
+        return imSchach;
+    }
+
+    /**
+     * VERBESSERTE COMPUTERZUG-BERECHNUNG
+     */
+    computerZug() {
+        console.log("🤖 KI startet erweiterte Zugberechnung...");
+        
+        try {
+            this.knotenZaehler = 0;
+            this.berechnungsStartzeit = Date.now();
+            this.transpositionTable.clear();
+            
+            const aktuelleFarbe = this.weissAmZug ? WEISS : SCHWARZ;
+            const alleZuege = this.generiereZuege(aktuelleFarbe);
+            
+            if (alleZuege.length === 0) {
+                console.log("❌ Keine legalen Züge verfügbar");
+                return null;
+            }
+            
+            // Iterative Deepening mit Zeitkontrolle
+            let besterZug = alleZuege[0];
+            let besteBewertung = -Infinity;
+            
+            for (let tiefe = 1; tiefe <= this.kiEinstellungen.suchtiefe; tiefe++) {
+                console.log(`🔍 Suche in Tiefe ${tiefe}...`);
+                
+                let aktuellerBesterZug = null;
+                let aktuellBesteBewertung = -Infinity;
+                let alpha = -Infinity;
+                let beta = Infinity;
+                
+                const geordneteZuege = this.ordneZuege(alleZuege, this.berechneZobristHash());
+                
+                for (const zug of geordneteZuege) {
+                    const zustandVorZug = this.erstelleZustandSnapshot();
+                    this.zugAusfuehren(zug);
+                    
+                    const bewertung = -this.alphaBetaSuchen(tiefe - 1, -beta, -alpha, false);
+                    
+                    this.wiederherstelleZustand(zustandVorZug);
+                    
+                    if (bewertung > aktuellBesteBewertung) {
+                        aktuellBesteBewertung = bewertung;
+                        aktuellerBesterZug = zug;
+                    }
+                    
+                    alpha = Math.max(alpha, bewertung);
+                    
+                    // Timeout-Prüfung
+                    if (Date.now() - this.berechnungsStartzeit > this.kiEinstellungen.timeoutMs) {
+                        console.log("⏰ Zeitüberschreitung - verwende bisher beste Lösung");
+                        break;
+                    }
+                }
+                
+                if (aktuellerBesterZug && Date.now() - this.berechnungsStartzeit <= this.kiEinstellungen.timeoutMs) {
+                    besterZug = aktuellerBesterZug;
+                    besteBewertung = aktuellBesteBewertung;
+                    console.log(`✅ Tiefe ${tiefe}: ${this.zugZuNotation(besterZug)} (Bewertung: ${besteBewertung})`);
+                }
+                
+                // Frühzeitiger Abbruch bei klarer Entscheidung
+                if (besteBewertung > 1000 || besteBewertung < -1000) {
+                    console.log("🎯 Klare Entscheidung gefunden - breche Suche ab");
+                    break;
+                }
+                
+                if (Date.now() - this.berechnungsStartzeit > this.kiEinstellungen.timeoutMs) {
+                    break;
+                }
+            }
+            
+            const berechnungsZeit = Date.now() - this.berechnungsStartzeit;
+            console.log(`🤖 KI wählt: ${this.zugZuNotation(besterZug)} ` +
+                       `(Bewertung: ${besteBewertung}, Knoten: ${this.knotenZaehler}, Zeit: ${berechnungsZeit}ms)`);
+            
+            return besterZug;
+            
+        } catch (error) {
+            console.error("❌ Fehler in erweiterter computerZug:", error);
+            // Fallback zu einfacher KI
+            return this.einfacherComputerZug();
+        }
+    }
+
+    /**
+     * FALLBACK: EINFACHE KI FÜR NOTFÄLLE
+     */
+    einfacherComputerZug() {
+        const aktuelleFarbe = this.weissAmZug ? WEISS : SCHWARZ;
+        const alleZuege = this.generiereZuege(aktuelleFarbe);
+        
+        if (alleZuege.length === 0) return null;
+        
+        // Wähle zufälligen Zug aus legalen Zügen
+        const zufallsIndex = Math.floor(Math.random() * alleZuege.length);
+        return alleZuege[zufallsIndex];
+    }
+
+    getFigurWert(art) {
+        const werte = {
+            [BAUER]: 100,
+            [SPRINGER]: 320,
+            [LAEUFER]: 330,
+            [TURM]: 500,
+            [DAME]: 900,
+            [KOENIG]: 20000
+        };
+        return werte[art] || 0;
+    }
+
+    // Hilfsmethoden
+    zugZuNotation(zug) {
+        const von = this.positionZuNotation(zug.vonPos);
+        const nach = this.positionZuNotation(zug.nachPos);
+        return `${von}${nach}`;
+    }
+
     positionZuNotation(position) {
         const dateien = ['', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ''];
         const reihe = Math.floor(position / 10);
@@ -1011,61 +1551,11 @@ class ChesstegEngine {
     getFigurName(figurWert) {
         const farbe = figurWert > 0 ? 'Weiß' : 'Schwarz';
         const art = Math.abs(figurWert);
-        
         const namen = {
-            [BAUER]: 'Bauer',
-            [TURM]: 'Turm',
-            [LAEUFER]: 'Läufer',
-            [SPRINGER]: 'Springer',
-            [DAME]: 'Dame',
-            [KOENIG]: 'König'
+            [BAUER]: 'Bauer', [TURM]: 'Turm', [LAEUFER]: 'Läufer',
+            [SPRINGER]: 'Springer', [DAME]: 'Dame', [KOENIG]: 'König'
         };
-        
         return `${farbe} ${namen[art] || 'Unbekannt'}`;
-    }
-
-    // Debug-Funktionen (unchanged)
-    debugBrettDetail() {
-        console.log("=== BRETT DETAIL DEBUG ===");
-        for (let reihe = 9; reihe >= 2; reihe--) {
-            let line = `Reihe ${reihe - 1}: `;
-            for (let linie = 1; linie <= 8; linie++) {
-                const pos = reihe * 10 + linie;
-                const figur = this.brett[pos];
-                let symbol = '.';
-                if (figur !== LEER && figur !== DUMMY) {
-                    const namen = { [BAUER]: 'p', [TURM]: 'r', [LAEUFER]: 'b', [SPRINGER]: 'n', [DAME]: 'q', [KOENIG]: 'k' };
-                    symbol = namen[Math.abs(figur)] || '?';
-                    if (figur > 0) symbol = symbol.toUpperCase();
-                }
-                line += symbol + ' ';
-            }
-            console.log(line);
-        }
-        
-        console.log("\n=== FIGURENLISTE ===");
-        this.figurenListe.forEach((figur, index) => {
-            if (!figur.geschlagen) {
-                console.log(`${index}: ${this.getFigurName(figur.art * figur.farbe)} auf ${this.positionZuNotation(figur.pos)}`);
-            }
-        });
-        
-        console.log(`Am Zug: ${this.weissAmZug ? 'Weiß' : 'Schwarz'}`);
-        console.log(`Status: ${this.endmatt ? 'Schachmatt' : (this.patt ? 'Patt' : (this.istKoenigImSchach(this.weissAmZug ? WEISS : SCHWARZ) ? 'Schach' : 'Normal'))}`);
-        console.log("====================");
-    }
-
-    debugZugGenerierung() {
-        console.log("=== ZUGGENERIERUNG DEBUG ===");
-        const farbe = this.weissAmZug ? WEISS : SCHWARZ;
-        const zuege = this.generiereZuege(farbe);
-        
-        console.log(`Farbe ${this.weissAmZug ? 'Weiß' : 'Schwarz'} am Zug: ${zuege.length} legale Züge.`);
-        
-        zuege.slice(0, 8).forEach((zug, i) => {
-            console.log(`Zug ${i + 1}: ${this.zugZuNotation(zug)}`);
-        });
-        console.log("====================");
     }
 }
 
