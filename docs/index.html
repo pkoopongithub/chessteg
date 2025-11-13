@@ -537,14 +537,18 @@
           
           <div class="status-info">
             <span class="am-zug" id="amZug">Weiß am Zug</span>
+            <!-- ENTFERNT: Doppelte Modusanzeige - wird von ChessUI automatisch erstellt -->
           </div>
-          <button class="btn btn-primary" id="btnNaechsterZug">Nächster Zug</button>
-          <button class="btn" id="btnWeisserZug">Weißer Zug</button>
-          <button class="btn" id="btnSchwarzerZug">Schwarzer Zug</button>
+          
+          <!-- GEÄNDERT: Buttons umbenannt und neu angeordnet -->
+          <button class="btn btn-primary" id="btnNaechsterZug">Nächster Halbzug</button>
+          <button class="btn" id="btnWeissAmZug">Weiß am Zug</button>
+          <button class="btn" id="btnSchwarzAmZug">Schwarz am Zug</button>
 
           <div style="margin-top: 1rem;">
             <button class="btn btn-primary" id="btnComputerZug">Computerzug</button>
-            <button class="btn" id="btnSpielerVsKI">Spieler vs KI</button>
+            <!-- GEÄNDERT: Spieler vs KI als aktiv markiert -->
+            <button class="btn btn-primary" id="btnSpielerVsKI">Spieler vs KI</button>
             <button class="btn" id="btnKIVsKI">KI vs KI</button>
           </div>
         </div>
@@ -586,5 +590,66 @@
 
   <script src="js/chessteg.js"></script>
   <script src="js/chess-ui.js"></script>
+  
+  <!-- NEU: Automatische Initialisierung des Spielmodus -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Warte bis die ChessUI initialisiert ist
+      setTimeout(function() {
+        if (window.chessUI) {
+          // Setze automatisch den Spieler vs KI Modus
+          window.chessUI.setSpielModus('menschVsKI');
+          console.log("✅ Automatisch 'Spieler vs KI' Modus aktiviert");
+          
+          // Aktualisiere die Button-Stile
+          updateButtonStyles('menschVsKI');
+        }
+      }, 500);
+      
+      // Funktion zum Aktualisieren der Button-Stile
+      function updateButtonStyles(aktiverModus) {
+        const modusButtons = {
+          'menschVsKI': document.getElementById('btnSpielerVsKI'),
+          'kiVsKI': document.getElementById('btnKIVsKI')
+        };
+        
+        // Setze alle Buttons auf Standard
+        Object.values(modusButtons).forEach(btn => {
+          if (btn) {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn');
+          }
+        });
+        
+        // Aktiviere den aktuellen Modus-Button
+        if (modusButtons[aktiverModus]) {
+          modusButtons[aktiverModus].classList.remove('btn');
+          modusButtons[aktiverModus].classList.add('btn-primary');
+        }
+      }
+      
+      // Event-Listener für Modus-Buttons (ersetzen die Standard-Funktionalität nicht)
+      document.getElementById('btnSpielerVsKI')?.addEventListener('click', function() {
+        updateButtonStyles('menschVsKI');
+      });
+      
+      document.getElementById('btnKIVsKI')?.addEventListener('click', function() {
+        updateButtonStyles('kiVsKI');
+      });
+      
+      // Event-Listener für umbenannte Buttons
+      document.getElementById('btnWeissAmZug')?.addEventListener('click', function() {
+        if (window.chessUI) {
+          window.chessUI.weissenzug();
+        }
+      });
+      
+      document.getElementById('btnSchwarzAmZug')?.addEventListener('click', function() {
+        if (window.chessUI) {
+          window.chessUI.schwarzerzug();
+        }
+      });
+    });
+  </script>
 </body>
 </html>
